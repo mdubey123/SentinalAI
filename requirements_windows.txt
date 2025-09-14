@@ -1,0 +1,72 @@
+# SentinelAI v2 - Windows Compatible Dependencies
+# Install with: pip install -r requirements-windows.txt
+
+# Core Framework
+streamlit
+pandas
+numpy
+
+# Visualization
+plotly
+matplotlib
+seaborn
+
+# AI and LLM Integration
+langchain
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-cohere
+langchain-huggingface
+openai
+anthropic
+google-generativeai
+cohere
+transformers
+
+# Security and Cryptography
+cryptography
+pycryptodome
+
+# File Processing and Hashing
+python-magic-bin
+xxhash
+tlsh-python  # Preferred fuzzy hashing (precompiled wheels)
+ppdeep       # Pure Python fallback (no compilation needed)
+fuzzywuzzy[speedup]  # Windows-compatible fuzzy string matching
+
+# Network and VAPT (Basic)
+python-nmap
+requests
+urllib3
+
+# File Processing
+pathlib2
+watchdog
+psutil
+
+# Report Generation
+reportlab
+fpdf2
+jinja2
+
+# Database and Storage
+json5
+pyyaml
+
+# Async and Performance
+aiohttp
+aiofiles
+
+# Logging and Monitoring
+loguru
+structlog
+
+# Environment and Configuration
+python-dotenv
+toml
+
+# Additional Utilities
+tqdm
+rich
+click

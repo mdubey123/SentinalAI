@@ -1,0 +1,27 @@
+{
+  "app": {
+    "name": "SentinelAI v2",
+    "version": "2.0.0",
+    "debug": false
+  },
+  "security": {
+    "max_file_size_mb": 32,
+    "scan_timeout_seconds": 300,
+    "enable_audit_logging": true
+  },
+  "llm": {
+    "default_provider": "OpenAI",
+    "default_model": "gpt-4",
+    "api_keys": {}
+  },
+  "virustotal": {
+    "enabled": true,
+    "api_key": "",
+    "quota_limit": 500
+  },
+  "vapt": {
+    "enabled": false,
+    "default_scope": "Host Only",
+    "max_ports": 1000
+  }
+}

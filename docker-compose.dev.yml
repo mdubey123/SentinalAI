@@ -1,0 +1,88 @@
+# SentinelAI v2 - Development Docker Compose
+# For development with hot reloading and debugging
+
+version: '3.8'
+
+services:
+  # Development SentinelAI application
+  sentinelai-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: sentinelai-dev
+    ports:
+      - "8501:8501"
+      - "5678:5678"  # Debug port
+    volumes:
+      # Mount source code for hot reloading
+      - .:/app
+      - /app/env  # Exclude virtual environment
+      - /app/.git  # Exclude git directory
+      # Persistent data
+      - sentinelai_dev_data:/app/data
+      - sentinelai_dev_logs:/app/logs
+      - sentinelai_dev_reports:/app/reports
+      - sentinelai_dev_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
+      - STREAMLIT_SERVER_RUN_ON_SAVE=true
+      - STREAMLIT_SERVER_FILE_WATCHER_TYPE=auto
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      - clamav-dev
+    networks:
+      - sentinelai-dev-network
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false", "--server.enableXsrfProtection=false", "--server.runOnSave=true"]
+
+  # Development ClamAV
+  clamav-dev:
+    image: clamav/clamav:stable
+    container_name: sentinelai-clamav-dev
+    volumes:
+      - clamav_dev_data:/var/lib/clamav
+    environment:
+      - CLAMAV_NO_FRESHCLAM=false
+    restart: unless-stopped
+    networks:
+      - sentinelai-dev-network
+
+  # Development Redis
+  redis-dev:
+    image: redis:7-alpine
+    container_name: sentinelai-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+    networks:
+      - sentinelai-dev-network
+    command: redis-server --appendonly yes
+
+# Development volumes
+volumes:
+  sentinelai_dev_data:
+    driver: local
+  sentinelai_dev_logs:
+    driver: local
+  sentinelai_dev_reports:
+    driver: local
+  sentinelai_dev_cache:
+    driver: local
+  clamav_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+# Development network
+networks:
+  sentinelai-dev-network:
+    driver: bridge
+

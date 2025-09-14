@@ -1,0 +1,149 @@
+/* Main Theme Colors */
+:root {
+    --primary: #2563eb;       /* Vibrant blue for primary actions */
+    --primary-dark: #1d4ed8;  /* Darker shade for hover states */
+    --secondary: #4b5563;     /* Cool gray for secondary elements */
+    --accent: #7c3aed;        /* Purple accent for highlights */
+    --success: #10b981;       /* Green for success states */
+    --warning: #f59e0b;       /* Amber for warnings */
+    --danger: #ef4444;        /* Red for errors and destructive actions */
+    --background: #f8fafc;    /* Light gray background */
+    --surface: #ffffff;       /* White surface for cards and containers */
+    --text-primary: #1e293b;  /* Dark gray for primary text */
+    --text-secondary: #64748b;/* Medium gray for secondary text */
+    --border: #e2e8f0;        /* Light gray for borders */
+}
+
+/* Base Styles */
+.stApp {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.stButton > button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar */
+.css-1d391kg {
+    background-color: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s ease;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--primary);
+    background-color: var(--surface);
+    border-bottom: 2px solid var(--primary);
+}
+
+/* Input Fields */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSelectbox > div > div > div {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stSelectbox > div > div > div:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Cards and Containers */
+.stAlert, .stDataFrame, .stJson {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+    background-color: var(--surface);
+}
+
+/* Status Indicators */
+.stAlert {
+    border-left: 4px solid var(--primary);
+}
+
+.stAlert[data-testid="stNotification"] {
+    border-left: 4px solid var(--success);
+}
+
+.stAlert[data-testid="stError"] {
+    border-left: 4px solid var(--danger);
+}
+
+/* Progress Bar */
+.stProgress > div > div > div > div {
+    background-color: var(--primary);
+}
+
+/* Radio Buttons and Checkboxes */
+.stRadio > div > label > div:first-child,
+.stCheckbox > label > div:first-child {
+    margin-right: 0.5rem;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stTabs [data-baseweb="tab"] {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}

@@ -1,0 +1,89 @@
+# SentinelAI v2 Dependencies
+# Core Framework
+streamlit
+pandas
+numpy
+
+# Visualization
+plotly
+matplotlib
+seaborn
+
+# AI and LLM Integration
+langchain
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-cohere
+langchain-huggingface
+openai
+anthropic
+google-generativeai
+cohere
+transformers
+
+# Security and Cryptography
+cryptography
+pycryptodome
+fuzzywuzzy[speedup]  # Windows-compatible fuzzy string matching
+
+# Malware Detection
+yara-python
+pyclamd
+python-magic
+tlsh-python  # Preferred fuzzy hashing (precompiled wheels)
+ppdeep       # Pure Python fallback (no compilation needed)
+
+# Network and VAPT
+python-nmap
+scapy
+requests
+urllib3
+
+# File Processing
+pathlib2
+watchdog
+psutil
+
+# Report Generation
+reportlab
+fpdf2
+jinja2
+weasyprint
+
+# Database and Storage
+pysqlite3
+json5
+pyyaml
+
+# Async and Performance
+asyncio
+aiohttp
+aiofiles
+concurrent-futures
+
+# Logging and Monitoring
+loguru
+structlog
+
+# Testing and Development
+pytest
+pytest-asyncio
+black
+flake8
+mypy
+
+# Environment and Configuration
+python-dotenv
+configparser
+toml
+
+# CVE and Threat Intelligence
+cve-search-api
+mitre-attack
+stix2
+
+# Additional Utilities
+tqdm
+rich
+click
