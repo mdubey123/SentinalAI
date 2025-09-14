@@ -46,41 +46,112 @@ st.set_page_config(
 logger = setup_logger()
 
 def load_custom_css():
-    """Load custom CSS directly"""
+    """Load custom CSS with enhanced modern UI/UX"""
     custom_css = """
     <style>
-    /* Professional Minimalistic Theme Colors */
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    /* CSS Variables for Light/Dark Theme */
     :root {
-        --primary: #1e293b;       /* Sophisticated slate blue for primary actions */
-        --primary-dark: #0f172a;  /* Deep slate for hover states */
-        --primary-light: #475569; /* Lighter slate for secondary actions */
-        --secondary: #64748b;     /* Cool gray for secondary elements */
-        --accent: #3b82f6;        /* Professional blue accent - modern and trustworthy */
-        --accent-dark: #2563eb;   /* Darker blue for hover states */
-        --accent-light: #60a5fa;  /* Light blue for highlights */
-        --success: #10b981;       /* Emerald green for success states */
-        --success-light: #34d399; /* Light emerald for success highlights */
-        --warning: #f59e0b;       /* Amber for warnings */
-        --warning-light: #fbbf24; /* Light amber for warning highlights */
-        --danger: #ef4444;        /* Red for errors */
-        --danger-light: #f87171;  /* Light red for danger highlights */
-        --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); /* Subtle gradient background */
-        --surface: rgba(255, 255, 255, 0.95); /* Semi-transparent white for glass effect */
-        --surface-elevated: rgba(255, 255, 255, 0.98); /* More opaque for elevated surfaces */
-        --surface-glass: rgba(255, 255, 255, 0.1); /* Glass effect for overlays */
-        --text-primary: #0f172a;  /* Deep slate for primary text */
-        --text-secondary: #64748b;/* Medium gray for secondary text */
-        --text-muted: #94a3b8;    /* Light gray for muted text */
-        --border: rgba(226, 232, 240, 0.6); /* Semi-transparent borders */
-        --border-light: rgba(241, 245, 249, 0.8); /* Very light borders */
-        --shadow: rgba(15, 23, 42, 0.1); /* Professional shadow */
-        --shadow-hover: rgba(15, 23, 42, 0.15); /* Hover shadow */
-        --shadow-glass: rgba(15, 23, 42, 0.05); /* Glass shadow */
+        /* Light Theme Colors */
+        --primary: #1e293b;
+        --primary-dark: #0f172a;
+        --primary-light: #475569;
+        --secondary: #64748b;
+        --accent: #3b82f6;
+        --accent-dark: #2563eb;
+        --accent-light: #60a5fa;
+        --success: #10b981;
+        --success-light: #34d399;
+        --warning: #f59e0b;
+        --warning-light: #fbbf24;
+        --danger: #ef4444;
+        --danger-light: #f87171;
+        --info: #06b6d4;
+        --info-light: #22d3ee;
+        
+        /* Light Theme Backgrounds */
+        --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        --surface: rgba(255, 255, 255, 0.95);
+        --surface-elevated: rgba(255, 255, 255, 0.98);
+        --surface-glass: rgba(255, 255, 255, 0.1);
+        --card-bg: rgba(255, 255, 255, 0.9);
+        
+        /* Light Theme Text */
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --text-muted: #94a3b8;
+        --text-inverse: #ffffff;
+        
+        /* Light Theme Borders & Shadows */
+        --border: rgba(226, 232, 240, 0.6);
+        --border-light: rgba(241, 245, 249, 0.8);
+        --shadow: rgba(15, 23, 42, 0.1);
+        --shadow-hover: rgba(15, 23, 42, 0.15);
+        --shadow-glass: rgba(15, 23, 42, 0.05);
+        --shadow-card: rgba(15, 23, 42, 0.08);
+        
+        /* Gradients */
         --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
         --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
         --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
         --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        --gradient-info: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+        --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        
+        /* Animation Variables */
+        --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        /* Border Radius */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --radius-full: 9999px;
+    }
+    
+    /* Dark Theme Variables */
+    [data-theme="dark"] {
+        --primary: #f1f5f9;
+        --primary-dark: #e2e8f0;
+        --primary-light: #cbd5e1;
+        --secondary: #94a3b8;
+        --accent: #60a5fa;
+        --accent-dark: #3b82f6;
+        --accent-light: #93c5fd;
+        --success: #34d399;
+        --success-light: #6ee7b7;
+        --warning: #fbbf24;
+        --warning-light: #fcd34d;
+        --danger: #f87171;
+        --danger-light: #fca5a5;
+        --info: #22d3ee;
+        --info-light: #67e8f9;
+        
+        /* Dark Theme Backgrounds */
+        --background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --surface: rgba(30, 41, 59, 0.95);
+        --surface-elevated: rgba(30, 41, 59, 0.98);
+        --surface-glass: rgba(30, 41, 59, 0.1);
+        --card-bg: rgba(30, 41, 59, 0.9);
+        
+        /* Dark Theme Text */
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --text-inverse: #0f172a;
+        
+        /* Dark Theme Borders & Shadows */
+        --border: rgba(71, 85, 105, 0.3);
+        --border-light: rgba(71, 85, 105, 0.2);
+        --shadow: rgba(0, 0, 0, 0.3);
+        --shadow-hover: rgba(0, 0, 0, 0.4);
+        --shadow-glass: rgba(0, 0, 0, 0.1);
+        --shadow-card: rgba(0, 0, 0, 0.2);
     }
 
     /* Base Styles */
@@ -89,9 +160,11 @@ def load_custom_css():
         color: var(--text-primary) !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         min-height: 100vh !important;
+        line-height: 1.6 !important;
+        font-size: 14px !important;
     }
 
-    /* Add subtle pattern overlay */
+    /* Add animated pattern overlay */
     .stApp::before {
         content: '';
         position: fixed;
@@ -105,13 +178,47 @@ def load_custom_css():
             radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.02) 0%, transparent 50%);
         pointer-events: none;
         z-index: -1;
+        animation: backgroundShift 20s ease-in-out infinite;
+    }
+
+    @keyframes backgroundShift {
+        0%, 100% { transform: translateX(0) translateY(0); }
+        25% { transform: translateX(-10px) translateY(-5px); }
+        50% { transform: translateX(5px) translateY(-10px); }
+        75% { transform: translateX(-5px) translateY(5px); }
     }
 
     /* Main content area */
     .main .block-container {
         padding-top: 2rem !important;
         padding-bottom: 2rem !important;
-        max-width: 1200px !important;
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8rem !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .main .block-container {
+            padding: 0.5rem !important;
+        }
+        
+        h1 { font-size: 1.5rem !important; }
+        h2 { font-size: 1.25rem !important; }
+        h3 { font-size: 1.1rem !important; }
     }
 
     /* Headers */
@@ -119,23 +226,204 @@ def load_custom_css():
         color: var(--text-primary);
         font-weight: 600;
         margin-bottom: 0.75rem;
+        line-height: 1.3;
     }
 
-    /* Buttons */
+    h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    /* Modern Card Components */
+    .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 4px 20px var(--shadow-card);
+        backdrop-filter: blur(20px);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-accent);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px var(--shadow-hover);
+        border-color: var(--accent);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .card-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin: 0.25rem 0 0 0;
+    }
+
+    .card-content {
+        color: var(--text-primary);
+        line-height: 1.6;
+    }
+
+    .card-footer {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Status Cards */
+    .status-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        text-align: center;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .status-card.success {
+        border-color: var(--success);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%);
+    }
+
+    .status-card.warning {
+        border-color: var(--warning);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.05) 100%);
+    }
+
+    .status-card.danger {
+        border-color: var(--danger);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(248, 113, 113, 0.05) 100%);
+    }
+
+    .status-card.info {
+        border-color: var(--info);
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%);
+    }
+
+    .status-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    .status-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .status-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    /* Dark Mode Toggle */
+    .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-full);
+        padding: 0.5rem;
+        box-shadow: 0 4px 20px var(--shadow-card);
+        backdrop-filter: blur(20px);
+        transition: all var(--transition-normal);
+        cursor: pointer;
+    }
+
+    .theme-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px var(--shadow-hover);
+    }
+
+    .theme-toggle button {
+        background: none !important;
+        border: none !important;
+        padding: 0.5rem !important;
+        border-radius: var(--radius-full) !important;
+        font-size: 1.25rem !important;
+        color: var(--text-primary) !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+    .theme-toggle button:hover {
+        background: var(--surface-elevated) !important;
+        transform: rotate(180deg) !important;
+    }
+
+    /* Enhanced Button Styles */
     button, .stButton > button, .stButton > button:focus {
         background: var(--gradient-primary) !important;
-        color: white !important;
+        color: var(--text-inverse) !important;
         border: none !important;
-        border-radius: 12px !important;
+        border-radius: var(--radius-md) !important;
         padding: 0.875rem 2rem !important;
         font-weight: 600 !important;
         font-size: 0.875rem !important;
         letter-spacing: 0.025em !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all var(--transition-normal) !important;
         box-shadow: 0 4px 12px var(--shadow) !important;
         backdrop-filter: blur(10px) !important;
         position: relative !important;
         overflow: hidden !important;
+        cursor: pointer !important;
+        font-family: 'Inter', sans-serif !important;
     }
 
     .stButton > button::before {
@@ -146,7 +434,7 @@ def load_custom_css():
         width: 100%;
         height: 100%;
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
+        transition: left var(--transition-slow);
     }
 
     .stButton > button:hover::before {
@@ -164,10 +452,10 @@ def load_custom_css():
         box-shadow: 0 4px 12px var(--shadow) !important;
     }
 
-    /* Secondary Buttons */
+    /* Button Variants */
     .stButton > button[kind="secondary"] {
         background: var(--surface) !important;
-        color: var(--primary) !important;
+        color: var(--text-primary) !important;
         border: 1px solid var(--border) !important;
         backdrop-filter: blur(10px) !important;
     }
@@ -179,21 +467,82 @@ def load_custom_css():
     }
 
     /* Success Buttons */
-    .stButton > button[kind="primary"]:has([data-testid="stSuccess"]) {
+    .success-button, .stButton > button:has([data-testid="stSuccess"]) {
         background: var(--gradient-success) !important;
     }
 
+    .success-button:hover, .stButton > button:has([data-testid="stSuccess"]):hover {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    }
+
     /* Warning Buttons */
-    .stButton > button[kind="primary"]:has([data-testid="stWarning"]) {
+    .warning-button, .stButton > button:has([data-testid="stWarning"]) {
         background: var(--gradient-warning) !important;
     }
 
+    .warning-button:hover, .stButton > button:has([data-testid="stWarning"]):hover {
+        background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
+    }
+
     /* Danger Buttons */
-    .stButton > button[kind="primary"]:has([data-testid="stError"]) {
+    .danger-button, .stButton > button:has([data-testid="stError"]) {
         background: var(--gradient-danger) !important;
     }
 
-    /* Sidebar */
+    .danger-button:hover, .stButton > button:has([data-testid="stError"]):hover {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+    }
+
+    /* Info Buttons */
+    .info-button {
+        background: var(--gradient-info) !important;
+    }
+
+    .info-button:hover {
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
+    }
+
+    /* Button Sizes */
+    .btn-sm {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    .btn-lg {
+        padding: 1rem 2.5rem !important;
+        font-size: 1rem !important;
+    }
+
+    .btn-xl {
+        padding: 1.25rem 3rem !important;
+        font-size: 1.125rem !important;
+    }
+
+    /* Icon Buttons */
+    .icon-button {
+        padding: 0.75rem !important;
+        border-radius: var(--radius-full) !important;
+        min-width: auto !important;
+        aspect-ratio: 1 !important;
+    }
+
+    /* Floating Action Button */
+    .fab {
+        position: fixed !important;
+        bottom: 2rem !important;
+        right: 2rem !important;
+        z-index: 1000 !important;
+        border-radius: var(--radius-full) !important;
+        padding: 1rem !important;
+        box-shadow: 0 8px 30px var(--shadow-hover) !important;
+        font-size: 1.5rem !important;
+    }
+
+    .fab:hover {
+        transform: scale(1.1) !important;
+    }
+
+    /* Enhanced Sidebar */
     section[data-testid="stSidebar"] {
         background: var(--surface) !important;
         border-right: 1px solid var(--border) !important;
@@ -215,6 +564,217 @@ def load_custom_css():
         font-size: 1.5rem !important;
         font-weight: 700 !important;
         margin-bottom: 0.5rem !important;
+    }
+
+    /* Form Components */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > div,
+    .stNumberInput > div > div > input {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.875rem !important;
+        transition: all var(--transition-fast) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus,
+    .stSelectbox > div > div > div:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        outline: none !important;
+    }
+
+    .stTextInput > div > div > input:hover,
+    .stTextArea > div > div > textarea:hover,
+    .stSelectbox > div > div > div:hover,
+    .stNumberInput > div > div > input:hover {
+        border-color: var(--accent-light) !important;
+    }
+
+    /* File Uploader */
+    .stFileUploader {
+        background: var(--surface) !important;
+        border: 2px dashed var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 2rem !important;
+        text-align: center !important;
+        transition: all var(--transition-normal) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .stFileUploader:hover {
+        border-color: var(--accent) !important;
+        background: var(--surface-elevated) !important;
+    }
+
+    /* Data Tables */
+    .stDataFrame {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 20px var(--shadow-card) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .stDataFrame table {
+        background: transparent !important;
+    }
+
+    .stDataFrame th {
+        background: var(--gradient-primary) !important;
+        color: var(--text-inverse) !important;
+        font-weight: 600 !important;
+        padding: 1rem !important;
+        border: none !important;
+    }
+
+    .stDataFrame td {
+        background: var(--surface) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem 1rem !important;
+        border-bottom: 1px solid var(--border-light) !important;
+    }
+
+    .stDataFrame tr:hover td {
+        background: var(--surface-elevated) !important;
+    }
+
+    /* Metrics */
+    .metric-container {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1.5rem !important;
+        text-align: center !important;
+        box-shadow: 0 4px 20px var(--shadow-card) !important;
+        backdrop-filter: blur(10px) !important;
+        transition: all var(--transition-normal) !important;
+    }
+
+    .metric-container:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 30px var(--shadow-hover) !important;
+    }
+
+    .metric-value {
+        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        color: var(--text-primary) !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .metric-label {
+        font-size: 0.875rem !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+
+    .metric-delta {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .metric-delta.positive {
+        color: var(--success) !important;
+    }
+
+    .metric-delta.negative {
+        color: var(--danger) !important;
+    }
+
+    /* Progress Bars */
+    .stProgress > div > div > div {
+        background: var(--gradient-accent) !important;
+        border-radius: var(--radius-full) !important;
+        height: 8px !important;
+    }
+
+    .stProgress > div > div {
+        background: var(--border-light) !important;
+        border-radius: var(--radius-full) !important;
+        height: 8px !important;
+    }
+
+    /* Alerts and Messages */
+    .stAlert {
+        border-radius: var(--radius-lg) !important;
+        border: none !important;
+        padding: 1rem 1.5rem !important;
+        margin: 1rem 0 !important;
+        backdrop-filter: blur(10px) !important;
+        box-shadow: 0 4px 20px var(--shadow-card) !important;
+    }
+
+    .stAlert[data-testid="stSuccess"] {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%) !important;
+        border-left: 4px solid var(--success) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .stAlert[data-testid="stWarning"] {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+        border-left: 4px solid var(--warning) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .stAlert[data-testid="stError"] {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%) !important;
+        border-left: 4px solid var(--danger) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .stAlert[data-testid="stInfo"] {
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%) !important;
+        border-left: 4px solid var(--info) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* Code Blocks */
+    .stCode {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 1rem !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.875rem !important;
+        color: var(--text-primary) !important;
+        box-shadow: 0 2px 10px var(--shadow) !important;
+    }
+
+    /* Expander */
+    .streamlit-expander {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        margin: 1rem 0 !important;
+        box-shadow: 0 4px 20px var(--shadow-card) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .streamlit-expanderHeader {
+        background: var(--surface) !important;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+        padding: 1rem 1.5rem !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+    .streamlit-expanderHeader:hover {
+        background: var(--surface-elevated) !important;
+    }
+
+    .streamlit-expanderContent {
+        padding: 1.5rem !important;
+        color: var(--text-primary) !important;
     }
 
     /* Tabs */
@@ -521,17 +1081,197 @@ def load_custom_css():
     /* Selectbox */
     .stSelectbox > div > div {
         background: var(--surface) !important;
-        border-radius: 12px !important;
+        border-radius: var(--radius-md) !important;
         backdrop-filter: blur(20px) !important;
     }
 
     /* Progress Bar */
     .stProgress > div > div > div > div {
-        background-color: var(--primary);
+        background: var(--gradient-accent) !important;
+        border-radius: var(--radius-full) !important;
+    }
+
+    /* Loading Spinner */
+    .stSpinner {
+        color: var(--accent) !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--surface);
+        border-radius: var(--radius-full);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--gradient-accent);
+        border-radius: var(--radius-full);
+        transition: all var(--transition-fast);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-dark);
+    }
+
+    /* Selection */
+    ::selection {
+        background: rgba(59, 130, 246, 0.2);
+        color: var(--text-primary);
+    }
+
+    /* Focus Outline */
+    *:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    /* Print Styles */
+    @media print {
+        .theme-toggle,
+        .fab,
+        .stSidebar {
+            display: none !important;
+        }
+        
+        .main .block-container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+    }
+
+    /* High Contrast Mode */
+    @media (prefers-contrast: high) {
+        :root {
+            --border: rgba(0, 0, 0, 0.3);
+            --shadow: rgba(0, 0, 0, 0.2);
+        }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
+
+def create_theme_toggle():
+    """Create dark/light mode toggle button"""
+    if 'dark_mode' not in st.session_state:
+        st.session_state.dark_mode = False
+    
+    # Theme toggle button
+    theme_icon = "🌙" if not st.session_state.dark_mode else "☀️"
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col3:
+        if st.button(theme_icon, key="theme_toggle", help="Toggle dark/light mode"):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
+    
+    # Apply theme to body
+    theme_class = "dark" if st.session_state.dark_mode else "light"
+    st.markdown(f"""
+    <script>
+    document.body.setAttribute('data-theme', '{theme_class}');
+    </script>
+    """, unsafe_allow_html=True)
+
+def create_card(title, content, subtitle=None, footer=None, card_type="default"):
+    """Create a modern card component"""
+    card_class = f"card {card_type}" if card_type != "default" else "card"
+    
+    card_html = f"""
+    <div class="{card_class}">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{title}</h3>
+                {f'<p class="card-subtitle">{subtitle}</p>' if subtitle else ''}
+            </div>
+        </div>
+        <div class="card-content">
+            {content}
+        </div>
+        {f'<div class="card-footer">{footer}</div>' if footer else ''}
+    </div>
+    """
+    return st.markdown(card_html, unsafe_allow_html=True)
+
+def create_status_card(icon, value, label, status="info"):
+    """Create a status card with icon, value, and label"""
+    status_class = f"status-card {status}"
+    
+    card_html = f"""
+    <div class="{status_class}">
+        <span class="status-icon">{icon}</span>
+        <div class="status-value">{value}</div>
+        <div class="status-label">{label}</div>
+    </div>
+    """
+    return st.markdown(card_html, unsafe_allow_html=True)
+
+def create_metric_card(value, label, delta=None, delta_type="neutral"):
+    """Create a metric card with optional delta"""
+    delta_class = f"metric-delta {delta_type}" if delta_type != "neutral" else "metric-delta"
+    delta_html = f'<div class="{delta_class}">{delta}</div>' if delta else ''
+    
+    card_html = f"""
+    <div class="metric-container">
+        <div class="metric-value">{value}</div>
+        <div class="metric-label">{label}</div>
+        {delta_html}
+    </div>
+    """
+    return st.markdown(card_html, unsafe_allow_html=True)
+
+def create_animated_header(title, subtitle=None, icon=None):
+    """Create an animated header with gradient text"""
+    icon_html = f'<span style="font-size: 2rem; margin-right: 1rem;">{icon}</span>' if icon else ''
+    subtitle_html = f'<p style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 0.5rem;">{subtitle}</p>' if subtitle else ''
+    
+    header_html = f"""
+    <div style="text-align: center; margin: 2rem 0;">
+        {icon_html}
+        <h1 style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0;">
+            {title}
+        </h1>
+        {subtitle_html}
+    </div>
+    """
+    return st.markdown(header_html, unsafe_allow_html=True)
+
+def create_loading_animation():
+    """Create a custom loading animation"""
+    loading_html = """
+    <div style="display: flex; justify-content: center; align-items: center; padding: 2rem;">
+        <div style="
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        "></div>
+        <span style="margin-left: 1rem; color: var(--text-secondary);">Loading...</span>
+    </div>
+    <style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    </style>
+    """
+    return st.markdown(loading_html, unsafe_allow_html=True)
 
 class SentinelAIApp:
     """Main SentinelAI v2 Application Class"""
@@ -906,13 +1646,54 @@ class SentinelAIApp:
             st.info("Ready for assessment")
     
     def render_scan_results_dashboard(self):
-        """Render detailed scan results with visualizations"""
+        """Render detailed scan results with modern UI components"""
         results = st.session_state.scan_results
         
-        # Threat Distribution
+        # Security Overview Cards
         if 'threats' in results:
             threat_data = results['threats']
+            security_score = results.get('security_score', 0)
             
+            # Create status cards for key metrics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                create_status_card(
+                    icon="🛡️",
+                    value=f"{security_score}/100",
+                    label="Security Score",
+                    status="success" if security_score >= 80 else "warning" if security_score >= 60 else "danger"
+                )
+            
+            with col2:
+                create_status_card(
+                    icon="⚠️",
+                    value=str(len(threat_data)),
+                    label="Threats Detected",
+                    status="danger" if len(threat_data) > 0 else "success"
+                )
+            
+            with col3:
+                critical_threats = len([t for t in threat_data if t.get('severity') == 'critical'])
+                create_status_card(
+                    icon="🔴",
+                    value=str(critical_threats),
+                    label="Critical Threats",
+                    status="danger" if critical_threats > 0 else "success"
+                )
+            
+            with col4:
+                files_scanned = len(results.get('local_scan', {}).get('files', []))
+                create_status_card(
+                    icon="📁",
+                    value=str(files_scanned),
+                    label="Files Scanned",
+                    status="info"
+                )
+            
+            st.markdown("---")
+            
+            # Threat Distribution Charts
             col1, col2 = st.columns(2)
             
             with col1:
@@ -926,7 +1707,13 @@ class SentinelAIApp:
                     fig = px.pie(
                         values=list(severity_counts.values()),
                         names=list(severity_counts.keys()),
-                        title="Threat Severity Distribution"
+                        title="Threat Severity Distribution",
+                        color_discrete_sequence=['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+                    )
+                    fig.update_layout(
+                        font=dict(family="Inter", size=12),
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)'
                     )
                     st.plotly_chart(fig, use_container_width=True)
             
@@ -941,7 +1728,16 @@ class SentinelAIApp:
                     fig = px.bar(
                         x=list(type_counts.keys()),
                         y=list(type_counts.values()),
-                        title="Threat Types Detected"
+                        title="Threat Types Detected",
+                        color=list(type_counts.values()),
+                        color_continuous_scale='Blues'
+                    )
+                    fig.update_layout(
+                        font=dict(family="Inter", size=12),
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        xaxis_title="Threat Type",
+                        yaxis_title="Count"
                     )
                     st.plotly_chart(fig, use_container_width=True)
         
@@ -2086,38 +2882,151 @@ class SentinelAIApp:
     def run(self):
         """Main application entry point"""
         try:
+            # Add theme toggle
+            create_theme_toggle()
+            
             # Render sidebar configuration
             config = self.render_sidebar()
             
-            # Main header
-            st.title("🛡️ SentinelAI v2")
-            st.markdown("*Enterprise-Grade Cybersecurity Analysis Platform*")
+            # Enhanced main header with animation
+            create_animated_header(
+                title="SentinelAI v2",
+                subtitle="Enterprise-Grade Cybersecurity Analysis Platform",
+                icon="🛡️"
+            )
             
             # Render main application tabs
             self.render_main_tabs(config)
             
-            # Footer
+            # Enhanced footer
             st.markdown("---")
-            st.markdown(
-                "**SentinelAI v2** | "
-                "Built with Streamlit, LangChain, and Advanced AI"
-            )
+            footer_html = """
+            <div style="text-align: center; padding: 2rem 0; color: var(--text-secondary);">
+                <p style="margin: 0; font-size: 0.9rem;">
+                    <strong>SentinelAI v2</strong> | 
+                    Built with Streamlit, LangChain, and Advanced AI
+                </p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">
+                    © 2024 Dr. Alexandra Chen's Cybersecurity Research Lab
+                </p>
+            </div>
+            """
+            st.markdown(footer_html, unsafe_allow_html=True)
             
         except Exception as e:
             logger.error(f"Application error: {str(e)}")
             st.error(f"Application error: {str(e)}")
 
-def load_custom_css():
-    st.markdown("""
-        <style>
-            /* Add custom CSS styles here */
-        </style>
-    """, unsafe_allow_html=True)
+def demo_ui_components():
+    """Demo function showing all UI components"""
+    st.markdown("## 🎨 UI Components Demo")
+    
+    # Cards
+    st.markdown("### Cards")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        create_card(
+            title="Basic Card",
+            content="This is a basic card component with modern styling and hover effects.",
+            subtitle="Card Subtitle"
+        )
+    
+    with col2:
+        create_card(
+            title="Success Card",
+            content="This card shows success status with green accent.",
+            card_type="success"
+        )
+    
+    # Status Cards
+    st.markdown("### Status Cards")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        create_status_card("✅", "100", "Success", "success")
+    with col2:
+        create_status_card("⚠️", "5", "Warning", "warning")
+    with col3:
+        create_status_card("❌", "2", "Error", "danger")
+    with col4:
+        create_status_card("ℹ️", "10", "Info", "info")
+    
+    # Metric Cards
+    st.markdown("### Metric Cards")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        create_metric_card("1,234", "Total Scans", "+12%", "positive")
+    with col2:
+        create_metric_card("98.5%", "Success Rate", "-2.1%", "negative")
+    with col3:
+        create_metric_card("45", "Active Threats", "0%", "neutral")
+    
+    # Buttons
+    st.markdown("### Buttons")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.button("Primary Button", key="btn1")
+    with col2:
+        st.button("Success Button", key="btn2")
+    with col3:
+        st.button("Warning Button", key="btn3")
+    with col4:
+        st.button("Danger Button", key="btn4")
+    
+    # Form Elements
+    st.markdown("### Form Elements")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.text_input("Text Input", placeholder="Enter text here...")
+        st.selectbox("Select Box", ["Option 1", "Option 2", "Option 3"])
+    
+    with col2:
+        st.text_area("Text Area", placeholder="Enter longer text here...")
+        st.number_input("Number Input", min_value=0, max_value=100, value=50)
+    
+    # File Uploader
+    st.markdown("### File Uploader")
+    st.file_uploader("Upload Files", type=['txt', 'pdf', 'docx'], help="Upload files for analysis")
+    
+    # Alerts
+    st.markdown("### Alerts")
+    st.success("This is a success message!")
+    st.warning("This is a warning message!")
+    st.error("This is an error message!")
+    st.info("This is an info message!")
+    
+    # Progress Bar
+    st.markdown("### Progress Bar")
+    progress = st.progress(0.7)
+    st.text("70% Complete")
+    
+    # Code Block
+    st.markdown("### Code Block")
+    st.code("""
+def hello_world():
+    print("Hello, World!")
+    return "Success"
+    """, language="python")
+    
+    # Expander
+    st.markdown("### Expander")
+    with st.expander("Click to expand"):
+        st.write("This is expandable content with modern styling.")
+        st.write("You can put any content here.")
 
 def main():
     """Application entry point"""
-    # Load custom CSS
+    # Load enhanced custom CSS
     load_custom_css()
+    
+    # Add demo option
+    if st.sidebar.checkbox("Show UI Components Demo"):
+        demo_ui_components()
+        return
     
     app = SentinelAIApp()
     app.run()
