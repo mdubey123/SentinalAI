@@ -319,3 +319,4 @@ For enterprise deployments and custom integrations, contact Dr. Alexandra Chen's
 **SentinelAI v2** - *Precision Cybersecurity Analysis*  
 Built with ❤️ by Dr. Alexandra Chen using Streamlit, LangChain, and Advanced AI
 "# SentinelAI" 
+"# SentinalAI" 
