@@ -23,6 +23,8 @@ services:
       # Mount host directories for scanning (optional)
       - /var/log:/host/var/log:ro
       - /tmp:/host/tmp:ro
+    env_file:
+      - docker.env.example
     environment:
       - PYTHONPATH=/app
       - STREAMLIT_SERVER_PORT=8501
@@ -30,6 +32,19 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_ENABLE_CORS=false
       - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
+      # LLM Provider Environment Variables (optional - can be set via UI)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - LLAMA_API_KEY=${LLAMA_API_KEY:-}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      # Application settings
+      - SENTINELAI_ENV=production
+      - LOG_LEVEL=INFO
     restart: unless-stopped
     depends_on:
       - clamav

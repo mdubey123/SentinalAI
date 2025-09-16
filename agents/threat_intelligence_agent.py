@@ -12,15 +12,24 @@ import re
 
 from agents.base_agent import BaseAgent
 from utils.logger import security_audit
+from core.llm_client import UniversalLLMClient
 
 class ThreatIntelligenceAgent(BaseAgent):
     """Agent for AI-powered threat intelligence and analysis"""
     
-    def __init__(self, llm_provider: str, llm_model: str):
+    def __init__(self, llm_provider: str, llm_model: str, api_key: Optional[str] = None):
         super().__init__("threat_intelligence")
         
         self.llm_provider = llm_provider
         self.llm_model = llm_model
+        
+        # Initialize LLM client
+        try:
+            self.llm_client = UniversalLLMClient(llm_provider, llm_model, api_key)
+            self.logger.info(f"Initialized LLM client: {llm_provider}/{llm_model}")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize LLM client: {e}")
+            self.llm_client = None
         
         # MITRE ATT&CK framework mapping
         self.mitre_tactics = self._load_mitre_tactics()
@@ -399,8 +408,6 @@ class ThreatIntelligenceAgent(BaseAgent):
     
     async def _generate_ai_analysis(self, aggregated_data: Dict[str, Any], threats: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate AI-powered analysis and storytelling"""
-        # This is a simplified version - in production would use actual LLM
-        
         threat_count = len(threats)
         critical_threats = [t for t in threats if t.get('severity') == 'critical']
         high_threats = [t for t in threats if t.get('severity') == 'high']
@@ -411,13 +418,117 @@ class ThreatIntelligenceAgent(BaseAgent):
         # Generate analytical breakdown
         analytical_breakdown = self._generate_analytical_breakdown(threats, aggregated_data)
         
+        # Use LLM for enhanced analysis if available
+        enhanced_insights = []
+        if self.llm_client:
+            try:
+                enhanced_insights = await self._generate_llm_enhanced_analysis(threats, aggregated_data)
+            except Exception as e:
+                self.logger.warning(f"LLM analysis failed, using fallback: {e}")
+                enhanced_insights = self._generate_key_insights(threats)
+        else:
+            enhanced_insights = self._generate_key_insights(threats)
+        
         return {
             'narrative_story': narrative_story,
             'analytical_breakdown': analytical_breakdown,
-            'key_insights': self._generate_key_insights(threats),
+            'key_insights': enhanced_insights,
             'attack_timeline': self._generate_attack_timeline(threats),
-            'threat_landscape': self._analyze_threat_landscape(threats)
+            'threat_landscape': self._analyze_threat_landscape(threats),
+            'llm_enhanced': self.llm_client is not None
         }
+    
+    async def _generate_llm_enhanced_analysis(self, threats: List[Dict[str, Any]], aggregated_data: Dict[str, Any]) -> List[str]:
+        """Generate enhanced analysis using LLM"""
+        if not self.llm_client:
+            return self._generate_key_insights(threats)
+        
+        # Prepare context for LLM
+        threat_summary = self._prepare_threat_summary(threats)
+        scan_context = self._prepare_scan_context(aggregated_data)
+        
+        prompt = f"""
+        As a cybersecurity expert, analyze the following threat intelligence data and provide key insights:
+
+        SCAN CONTEXT:
+        {scan_context}
+
+        THREAT SUMMARY:
+        {threat_summary}
+
+        Please provide 5-7 key insights about:
+        1. Overall security posture
+        2. Threat patterns and trends
+        3. Potential attack vectors
+        4. Risk assessment
+        5. Recommended immediate actions
+        6. Long-term security improvements
+
+        Format your response as a numbered list of concise, actionable insights.
+        """
+        
+        try:
+            response = await self.llm_client.generate_response(
+                prompt, 
+                max_tokens=1000, 
+                temperature=0.1
+            )
+            
+            if response.get('success'):
+                content = response.get('content', '')
+                # Parse the response into individual insights
+                insights = [line.strip() for line in content.split('\n') if line.strip() and (line.strip().startswith(('1.', '2.', '3.', '4.', '5.', '6.', '7.', '-', '•')))]
+                return insights if insights else self._generate_key_insights(threats)
+            else:
+                self.logger.warning(f"LLM response failed: {response.get('error')}")
+                return self._generate_key_insights(threats)
+                
+        except Exception as e:
+            self.logger.error(f"LLM analysis error: {e}")
+            return self._generate_key_insights(threats)
+    
+    def _prepare_threat_summary(self, threats: List[Dict[str, Any]]) -> str:
+        """Prepare threat summary for LLM analysis"""
+        if not threats:
+            return "No threats detected in the scan."
+        
+        summary = f"Total threats detected: {len(threats)}\n"
+        
+        # Group by severity
+        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
+        threat_types = {}
+        
+        for threat in threats:
+            severity = threat.get('severity', 'low')
+            threat_type = threat.get('type', 'unknown')
+            
+            severity_counts[severity] += 1
+            threat_types[threat_type] = threat_types.get(threat_type, 0) + 1
+        
+        summary += f"Severity breakdown: {severity_counts}\n"
+        summary += f"Threat types: {threat_types}\n"
+        
+        # Add top threats
+        critical_threats = [t for t in threats if t.get('severity') == 'critical']
+        if critical_threats:
+            summary += f"\nCritical threats:\n"
+            for threat in critical_threats[:3]:  # Top 3
+                summary += f"- {threat.get('name', 'Unknown')}: {threat.get('description', 'No description')}\n"
+        
+        return summary
+    
+    def _prepare_scan_context(self, aggregated_data: Dict[str, Any]) -> str:
+        """Prepare scan context for LLM analysis"""
+        context = f"Scan completed at: {aggregated_data.get('scan_time', 'Unknown')}\n"
+        context += f"Files scanned: {aggregated_data.get('total_files_scanned', 0)}\n"
+        context += f"Total threats found: {aggregated_data.get('total_threats_found', 0)}\n"
+        
+        # Add scan coverage
+        coverage = aggregated_data.get('scan_coverage', {})
+        if coverage:
+            context += f"Scan coverage: {', '.join(coverage.keys())}\n"
+        
+        return context
     
     def _generate_narrative_story(self, threats: List[Dict[str, Any]]) -> str:
         """Generate attacker diary / dramatized intrusion story"""

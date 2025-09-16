@@ -1,9 +1,14 @@
 """
 SentinelAI v2 - Advanced Cybersecurity Analysis Platform
-Dr. Alexandra Chen's Enterprise-Grade Security Assessment Tool
+Enterprise-Grade Security Assessment Tool
 
 A comprehensive Streamlit application for malware detection, vulnerability assessment,
 and AI-powered threat analysis with gamification and multi-LLM support.
+
+Developed by:
+- Manya Dubey (Agentic AI, GenAI)
+- Meet Solanki (Data Engineer, Security Analyst)  
+- Mayush Jain (DevOps Engineer)
 """
 
 import streamlit as st
@@ -15,13 +20,16 @@ import hashlib
 import logging
 import tempfile
 import shutil
+import time
+import functools
 from pathlib import Path
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional, Any
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 # Import custom modules
 from core.config_manager import ConfigManager
@@ -39,20 +47,639 @@ st.set_page_config(
     page_title="SentinelAI v2 - Cybersecurity Analysis Platform",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://docs.streamlit.io/',
+        'Report a bug': "https://github.com/streamlit/streamlit/issues",
+        'About': "SentinelAI v2 - Advanced Cybersecurity Analysis Platform"
+    }
 )
+
+# Sidebar collapse state and toggle UI
+if 'sidebar_collapsed' not in st.session_state:
+    st.session_state.sidebar_collapsed = False
+
+def apply_sidebar_toggle_css():
+    if st.session_state.sidebar_collapsed:
+        st.markdown(
+            """
+            <style>
+            /* Collapse the sidebar off-canvas */
+            [data-testid="stSidebar"] {
+                margin-left: -320px !important;
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                opacity: 0 !important;
+            }
+            /* Ensure main content fills the space */
+            [data-testid="stAppViewContainer"] {
+                margin-left: 0 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            """
+            <style>
+            [data-testid="stSidebar"] {
+                margin-left: 0 !important;
+                opacity: 1 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+# Top toolbar with sidebar toggle button
+_top_c1, _top_c2 = st.columns([12, 1])
+with _top_c2:
+    if st.button("☰", help="Toggle sidebar", use_container_width=True):
+        st.session_state.sidebar_collapsed = not st.session_state.sidebar_collapsed
+        st.experimental_rerun()
+
+apply_sidebar_toggle_css()
 
 # Initialize logging
 logger = setup_logger()
 
+# ========================================
+# PERFORMANCE OPTIMIZATION & CACHING
+# ========================================
+
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def get_cached_scan_results(scan_id: str) -> Optional[Dict]:
+    """Cache scan results to improve performance"""
+    return None
+
+@st.cache_data(ttl=600)  # Cache for 10 minutes
+def get_cached_threat_intelligence(query: str) -> Optional[Dict]:
+    """Cache threat intelligence data"""
+    return None
+
+@st.cache_resource
+def get_thread_pool():
+    """Get a thread pool for concurrent operations"""
+    return ThreadPoolExecutor(max_workers=4)
+
+def validate_api_key(provider: str, api_key: str) -> bool:
+    """Validate API key format and security"""
+    if not api_key or len(api_key.strip()) < 10:
+        return False
+    
+    # Basic validation patterns
+    patterns = {
+        'openai': r'^sk-[A-Za-z0-9]{48}$',
+        'anthropic': r'^sk-ant-[A-Za-z0-9]{95}$',
+        'google': r'^[A-Za-z0-9_-]{39}$',
+        'cohere': r'^[A-Za-z0-9]{40}$',
+        'virustotal': r'^[A-Za-z0-9]{64}$'
+    }
+    
+    import re
+    pattern = patterns.get(provider.lower(), r'^[A-Za-z0-9_-]{20,}$')
+    return bool(re.match(pattern, api_key.strip()))
+
+def secure_input_handler(input_data: str, max_length: int = 1000) -> str:
+    """Securely handle user input with validation"""
+    if not input_data:
+        return ""
+    
+    # Sanitize input
+    sanitized = input_data.strip()[:max_length]
+    
+    # Remove potentially dangerous characters
+    dangerous_chars = ['<', '>', '"', "'", '&', ';', '(', ')', '|', '`']
+    for char in dangerous_chars:
+        sanitized = sanitized.replace(char, '')
+    
+    return sanitized
+
+def handle_api_quota(provider: str, operation: str) -> bool:
+    """Handle API quota management"""
+    quota_key = f"{provider}_{operation}_quota"
+    
+    if quota_key not in st.session_state:
+        st.session_state[quota_key] = {
+            'requests': 0,
+            'last_reset': time.time(),
+            'daily_limit': 1000  # Default limit
+        }
+    
+    quota = st.session_state[quota_key]
+    current_time = time.time()
+    
+    # Reset daily counter if 24 hours have passed
+    if current_time - quota['last_reset'] > 86400:  # 24 hours
+        quota['requests'] = 0
+        quota['last_reset'] = current_time
+    
+    # Check if quota exceeded
+    if quota['requests'] >= quota['daily_limit']:
+        st.error(f"⚠️ API quota exceeded for {provider}. Please try again tomorrow.")
+        return False
+    
+    quota['requests'] += 1
+    return True
+
+def optimize_scan_performance(scan_type: str, target: str) -> Dict:
+    """Optimize scan performance based on type and target"""
+    optimizations = {
+        'quick_scan': {
+            'timeout': 30,
+            'max_threads': 2,
+            'cache_results': True
+        },
+        'deep_scan': {
+            'timeout': 300,
+            'max_threads': 4,
+            'cache_results': True
+        },
+        'custom': {
+            'timeout': 120,
+            'max_threads': 3,
+            'cache_results': True
+        }
+    }
+    
+    return optimizations.get(scan_type, optimizations['quick_scan'])
+
+# ========================================
+# THEME MANAGEMENT SYSTEM
+# ========================================
+
+def initialize_theme_state():
+    """Initialize session state variables for theme management."""
+    if 'theme' not in st.session_state:
+        st.session_state.theme = 'auto'  # auto, light, dark
+    if 'theme_toggle_animation' not in st.session_state:
+        st.session_state.theme_toggle_animation = False
+
+def apply_theme(theme: str):
+    """
+    Apply the selected theme to the app.
+    
+    Args:
+        theme: The theme to apply ('auto', 'light', 'dark')
+    """
+    if theme == 'light':
+        st.markdown('<div class="theme-light">', unsafe_allow_html=True)
+    elif theme == 'dark':
+        st.markdown('<div class="theme-dark">', unsafe_allow_html=True)
+    else:  # auto
+        st.markdown('<div class="theme-auto">', unsafe_allow_html=True)
+
+def show_theme_toast(message: str, type: str = "info"):
+    """
+    Show a toast notification for theme changes.
+    
+    Args:
+        message: The message to display
+        type: The type of toast ('success', 'info', 'warning', 'error')
+    """
+    toast_html = f"""
+    <div class="toast {type}">
+        <strong>{message}</strong>
+    </div>
+    <script>
+        setTimeout(() => {{
+            const toast = document.querySelector('.toast');
+            if (toast) {{
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }}
+        }}, 3000);
+    </script>
+    """
+    st.markdown(toast_html, unsafe_allow_html=True)
+
+def create_theme_toggle():
+    """
+    Create a theme toggle section in the sidebar.
+    This function handles the theme switching logic and UI.
+    """
+    st.sidebar.markdown("### 🎨 Theme Settings")
+    
+    # Theme selection
+    theme_options = {
+        "🌓 Auto": "auto",
+        "☀️ Light": "light", 
+        "🌙 Dark": "dark"
+    }
+    
+    current_theme = st.session_state.theme
+    current_label = next(key for key, value in theme_options.items() if value == current_theme)
+    
+    # Create theme toggle
+    col1, col2 = st.sidebar.columns([3, 1])
+    
+    with col1:
+        selected_theme = st.selectbox(
+            "Choose Theme:",
+            options=list(theme_options.keys()),
+            index=list(theme_options.keys()).index(current_label),
+            key="theme_selector"
+        )
+    
+    with col2:
+        if st.button("🔄", help="Refresh theme", key="theme_refresh"):
+            st.session_state.theme_toggle_animation = True
+            st.rerun()
+    
+    # Update theme if changed
+    new_theme = theme_options[selected_theme]
+    if new_theme != current_theme:
+        st.session_state.theme = new_theme
+        st.session_state.theme_toggle_animation = True
+        
+        # Show toast notification
+        theme_messages = {
+            "auto": "Theme set to Auto (follows system preference)",
+            "light": "Theme switched to Light mode",
+            "dark": "Theme switched to Dark mode"
+        }
+        show_theme_toast(theme_messages[new_theme], "success")
+        st.rerun()
+    
+    # Display current theme info
+    st.sidebar.markdown(f"**Current:** {current_label}")
+    
+    # Theme preview
+    st.sidebar.markdown("### Preview")
+    with st.sidebar.container():
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.markdown("**Sample Card**")
+        st.markdown("This is how your content will look with the current theme.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ========================================
+# HOME PAGE ENHANCEMENT
+# ========================================
+
+def create_home_page():
+    """Create an engaging home page with team information and app description"""
+    
+    # Hero Section with animated title
+    st.markdown("""
+    <div class="hero-section fade-in">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="gradient-text">SentinelAI v2</span>
+            </h1>
+            <h2 class="hero-subtitle">Advanced Cybersecurity Analysis Platform</h2>
+            <p class="hero-description">
+                Empowering organizations with AI-driven security intelligence, 
+                comprehensive threat analysis, and automated vulnerability assessment.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # App Description Section
+    st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+    st.markdown("## 🎯 About SentinelAI v2")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.markdown("""
+        ### 🛡️ **Purpose & Mission**
+        
+        SentinelAI v2 is a cutting-edge cybersecurity platform that combines:
+        
+        - **🤖 AI-Powered Analysis**: Advanced machine learning algorithms for threat detection
+        - **🔍 Comprehensive Scanning**: Multi-layered security assessment capabilities
+        - **📊 Real-time Intelligence**: Live threat intelligence and vulnerability tracking
+        - **🎮 Gamified Experience**: Engaging user interface with achievement systems
+        - **🔧 DevOps Integration**: Seamless CI/CD pipeline security integration
+        
+        Our platform empowers security teams to stay ahead of evolving threats through 
+        intelligent automation and comprehensive analysis tools.
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### 🚀 **Key Features**
+        
+        - **Multi-LLM Support**: Integration with OpenAI, Anthropic, Google, and more
+        - **VirusTotal Integration**: Real-time malware analysis and threat intelligence
+        - **VAPT Capabilities**: Comprehensive penetration testing and vulnerability assessment
+        - **Automated Reporting**: AI-generated security reports with actionable insights
+        - **Real-time Monitoring**: Continuous security posture assessment
+        - **Compliance Mapping**: NIST, OWASP, and industry-standard framework alignment
+        """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Team Section with Toggle Cards
+    st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+    st.markdown("## 👥 Our Team")
+    st.markdown("Click on any team member card to learn more about their expertise and contributions!")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Initialize session state for team member toggles
+        if 'manya_expanded' not in st.session_state:
+            st.session_state.manya_expanded = False
+        
+        if st.button("🤖", key="manya_toggle", help="Click to expand/collapse"):
+            st.session_state.manya_expanded = not st.session_state.manya_expanded
+        
+        if st.session_state.manya_expanded:
+            st.markdown("""
+            <div class="team-member expanded">
+                <div class="member-icon">🤖</div>
+                <h3>Manya Dubey</h3>
+                <p class="member-role">Agentic AI & GenAI Specialist</p>
+                <div class="member-details">
+                    <p class="member-description">
+                        Leading the development of intelligent AI agents and generative AI 
+                        capabilities that power our automated threat analysis and response systems.
+                    </p>
+                    <div class="member-skills">
+                        <span class="skill-tag">Machine Learning</span>
+                        <span class="skill-tag">Natural Language Processing</span>
+                        <span class="skill-tag">AI Agent Development</span>
+                        <span class="skill-tag">Threat Intelligence</span>
+                    </div>
+                    <div class="member-achievements">
+                        <h4>Key Contributions:</h4>
+                        <ul>
+                            <li>Designed AI-powered threat analysis algorithms</li>
+                            <li>Implemented intelligent agent orchestration</li>
+                            <li>Developed natural language report generation</li>
+                            <li>Created automated threat classification systems</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="team-member collapsed">
+                <div class="member-icon">🤖</div>
+                <h3>Manya Dubey</h3>
+                <p class="member-role">Agentic AI & GenAI Specialist</p>
+                <p class="member-description">
+                    Leading the development of intelligent AI agents and generative AI 
+                    capabilities that power our automated threat analysis and response systems.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col2:
+        if 'meet_expanded' not in st.session_state:
+            st.session_state.meet_expanded = False
+        
+        if st.button("📊", key="meet_toggle", help="Click to expand/collapse"):
+            st.session_state.meet_expanded = not st.session_state.meet_expanded
+        
+        if st.session_state.meet_expanded:
+            st.markdown("""
+            <div class="team-member expanded">
+                <div class="member-icon">📊</div>
+                <h3>Meet Solanki</h3>
+                <p class="member-role">Data Engineer & Security Analyst</p>
+                <div class="member-details">
+                    <p class="member-description">
+                        Architecting robust data pipelines and implementing advanced security 
+                        analysis algorithms to ensure comprehensive threat detection and assessment.
+                    </p>
+                    <div class="member-skills">
+                        <span class="skill-tag">Data Engineering</span>
+                        <span class="skill-tag">Security Analysis</span>
+                        <span class="skill-tag">Big Data Processing</span>
+                        <span class="skill-tag">Threat Detection</span>
+                    </div>
+                    <div class="member-achievements">
+                        <h4>Key Contributions:</h4>
+                        <ul>
+                            <li>Built scalable data processing pipelines</li>
+                            <li>Implemented real-time threat detection algorithms</li>
+                            <li>Designed security analytics dashboards</li>
+                            <li>Optimized performance for large-scale scans</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="team-member collapsed">
+                <div class="member-icon">📊</div>
+                <h3>Meet Solanki</h3>
+                <p class="member-role">Data Engineer & Security Analyst</p>
+                <p class="member-description">
+                    Architecting robust data pipelines and implementing advanced security 
+                    analysis algorithms to ensure comprehensive threat detection and assessment.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col3:
+        if 'mayush_expanded' not in st.session_state:
+            st.session_state.mayush_expanded = False
+        
+        if st.button("⚙️", key="mayush_toggle", help="Click to expand/collapse"):
+            st.session_state.mayush_expanded = not st.session_state.mayush_expanded
+        
+        if st.session_state.mayush_expanded:
+            st.markdown("""
+            <div class="team-member expanded">
+                <div class="member-icon">⚙️</div>
+                <h3>Mayush Jain</h3>
+                <p class="member-role">DevOps Engineer</p>
+                <div class="member-details">
+                    <p class="member-description">
+                        Building scalable infrastructure and implementing DevOps best practices 
+                        to ensure reliable, secure, and efficient platform operations.
+                    </p>
+                    <div class="member-skills">
+                        <span class="skill-tag">DevOps</span>
+                        <span class="skill-tag">Infrastructure</span>
+                        <span class="skill-tag">Containerization</span>
+                        <span class="skill-tag">CI/CD</span>
+                    </div>
+                    <div class="member-achievements">
+                        <h4>Key Contributions:</h4>
+                        <ul>
+                            <li>Implemented containerized deployment strategies</li>
+                            <li>Built automated CI/CD pipelines</li>
+                            <li>Designed scalable cloud infrastructure</li>
+                            <li>Ensured high availability and security</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="team-member collapsed">
+                <div class="member-icon">⚙️</div>
+                <h3>Mayush Jain</h3>
+                <p class="member-role">DevOps Engineer</p>
+                <p class="member-description">
+                    Building scalable infrastructure and implementing DevOps best practices 
+                    to ensure reliable, secure, and efficient platform operations.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Workflow Section
+    st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+    st.markdown("## 🔄 How It Works")
+    
+    workflow_steps = [
+        {
+            "step": "1",
+            "title": "Configuration",
+            "description": "Set up your AI models, API keys, and scan parameters",
+            "icon": "⚙️"
+        },
+        {
+            "step": "2", 
+            "title": "Scanning",
+            "description": "Execute comprehensive security scans using multiple engines",
+            "icon": "🔍"
+        },
+        {
+            "step": "3",
+            "title": "Analysis",
+            "description": "AI-powered analysis of results with threat intelligence correlation",
+            "icon": "🧠"
+        },
+        {
+            "step": "4",
+            "title": "Reporting",
+            "description": "Generate detailed reports with actionable recommendations",
+            "icon": "📋"
+        }
+    ]
+    
+    cols = st.columns(4)
+    for i, step in enumerate(workflow_steps):
+        with cols[i]:
+            st.markdown(f"""
+            <div class="workflow-step">
+                <div class="step-number">{step['step']}</div>
+                <div class="step-icon">{step['icon']}</div>
+                <h4>{step['title']}</h4>
+                <p>{step['description']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Benefits Section
+    st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+    st.markdown("## 💡 Benefits")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        ### 🎯 **For Security Teams**
+        - **Reduced Manual Work**: Automate routine security tasks
+        - **Faster Response**: Real-time threat detection and analysis
+        - **Better Coverage**: Comprehensive multi-vector scanning
+        - **Actionable Insights**: Clear, prioritized recommendations
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### 🏢 **For Organizations**
+        - **Cost Efficiency**: Reduce security tool sprawl
+        - **Compliance**: Meet regulatory requirements with automated mapping
+        - **Risk Reduction**: Proactive threat identification and mitigation
+        - **Scalability**: Adapt to growing security needs
+        """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Call to Action
+    st.markdown("""
+    <div class="cta-section fade-in">
+        <h2>Ready to Get Started?</h2>
+        <p>Configure your settings in the sidebar and begin your first security scan!</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ========================================
+# FOOTER COMPONENT
+# ========================================
+
+def create_footer():
+    """Create a modern footer with team information"""
+    st.markdown("""
+    <div class="footer-section">
+        <div class="footer-content">
+            <div class="footer-main">
+                <h3>🛡️ SentinelAI v2</h3>
+                <p>Empowering cybersecurity solutions through AI-driven intelligence and automation.</p>
+            </div>
+            <div class="footer-team">
+                <h4>Our Team</h4>
+                <div class="team-links">
+                    <span>🤖 Manya Dubey (Agentic AI & GenAI)</span>
+                    <span>📊 Meet Solanki (Data Engineer & Security Analyst)</span>
+                    <span>⚙️ Mayush Jain (DevOps Engineer)</span>
+                </div>
+            </div>
+            <div class="footer-mission">
+                <h4>Mission</h4>
+                <p>Building the future of cybersecurity through intelligent automation, comprehensive analysis, and proactive threat detection.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 SentinelAI v2. Built with ❤️ for the cybersecurity community.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def load_custom_css():
-    """Load custom CSS with enhanced modern UI/UX"""
+    """Load custom CSS with enhanced modern UI/UX and theme system"""
     custom_css = """
     <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
-    /* CSS Variables for Light/Dark Theme */
+    /* ========================================
+       MODERN THEME SYSTEM
+       ======================================== */
+    
+    /* Design Tokens - Consistent across themes */
+    :root {
+        /* Border Radius */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 20px;
+        --radius-full: 9999px;
+        
+        /* Animation Variables */
+        --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        /* Gradients */
+        --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+        --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        --gradient-info: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+        --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    }
+    
+    /* ========================================
+       LIGHT THEME (Default)
+       ======================================== */
     :root {
         /* Light Theme Colors */
         --primary: #1e293b;
@@ -91,31 +718,13 @@ def load_custom_css():
         --shadow-hover: rgba(15, 23, 42, 0.15);
         --shadow-glass: rgba(15, 23, 42, 0.05);
         --shadow-card: rgba(15, 23, 42, 0.08);
-        
-        /* Gradients */
-        --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-        --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-        --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-        --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-        --gradient-info: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
-        --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-        
-        /* Animation Variables */
-        --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        
-        /* Border Radius */
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --radius-xl: 20px;
-        --radius-full: 9999px;
     }
     
-    /* Dark Theme Variables */
-    [data-theme="dark"] {
+    /* ========================================
+       DARK THEME
+       ======================================== */
+    @media (prefers-color-scheme: dark) {
+        :root {
         --primary: #f1f5f9;
         --primary-dark: #e2e8f0;
         --primary-light: #cbd5e1;
@@ -152,6 +761,79 @@ def load_custom_css():
         --shadow-hover: rgba(0, 0, 0, 0.4);
         --shadow-glass: rgba(0, 0, 0, 0.1);
         --shadow-card: rgba(0, 0, 0, 0.2);
+        }
+    }
+    
+    /* ========================================
+       MANUAL THEME OVERRIDES
+       ======================================== */
+    
+    /* Force Light Theme */
+    .theme-light {
+        --primary: #1e293b !important;
+        --primary-dark: #0f172a !important;
+        --primary-light: #475569 !important;
+        --secondary: #64748b !important;
+        --accent: #3b82f6 !important;
+        --accent-dark: #2563eb !important;
+        --accent-light: #60a5fa !important;
+        --success: #10b981 !important;
+        --success-light: #34d399 !important;
+        --warning: #f59e0b !important;
+        --warning-light: #fbbf24 !important;
+        --danger: #ef4444 !important;
+        --danger-light: #f87171 !important;
+        --info: #06b6d4 !important;
+        --info-light: #22d3ee !important;
+        --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+        --surface: rgba(255, 255, 255, 0.95) !important;
+        --surface-elevated: rgba(255, 255, 255, 0.98) !important;
+        --surface-glass: rgba(255, 255, 255, 0.1) !important;
+        --card-bg: rgba(255, 255, 255, 0.9) !important;
+        --text-primary: #0f172a !important;
+        --text-secondary: #64748b !important;
+        --text-muted: #94a3b8 !important;
+        --text-inverse: #ffffff !important;
+        --border: rgba(226, 232, 240, 0.6) !important;
+        --border-light: rgba(241, 245, 249, 0.8) !important;
+        --shadow: rgba(15, 23, 42, 0.1) !important;
+        --shadow-hover: rgba(15, 23, 42, 0.15) !important;
+        --shadow-glass: rgba(15, 23, 42, 0.05) !important;
+        --shadow-card: rgba(15, 23, 42, 0.08) !important;
+    }
+    
+    /* Force Dark Theme */
+    .theme-dark {
+        --primary: #f1f5f9 !important;
+        --primary-dark: #e2e8f0 !important;
+        --primary-light: #cbd5e1 !important;
+        --secondary: #94a3b8 !important;
+        --accent: #60a5fa !important;
+        --accent-dark: #3b82f6 !important;
+        --accent-light: #93c5fd !important;
+        --success: #34d399 !important;
+        --success-light: #6ee7b7 !important;
+        --warning: #fbbf24 !important;
+        --warning-light: #fcd34d !important;
+        --danger: #f87171 !important;
+        --danger-light: #fca5a5 !important;
+        --info: #22d3ee !important;
+        --info-light: #67e8f9 !important;
+        --background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+        --surface: rgba(30, 41, 59, 0.95) !important;
+        --surface-elevated: rgba(30, 41, 59, 0.98) !important;
+        --surface-glass: rgba(30, 41, 59, 0.1) !important;
+        --card-bg: rgba(30, 41, 59, 0.9) !important;
+        --text-primary: #f1f5f9 !important;
+        --text-secondary: #cbd5e1 !important;
+        --text-muted: #94a3b8 !important;
+        --text-inverse: #0f172a !important;
+        --border: rgba(71, 85, 105, 0.3) !important;
+        --border-light: rgba(71, 85, 105, 0.2) !important;
+        --shadow: rgba(0, 0, 0, 0.3) !important;
+        --shadow-hover: rgba(0, 0, 0, 0.4) !important;
+        --shadow-glass: rgba(0, 0, 0, 0.1) !important;
+        --shadow-card: rgba(0, 0, 0, 0.2) !important;
     }
 
     /* Base Styles */
@@ -162,6 +844,69 @@ def load_custom_css():
         min-height: 100vh !important;
         line-height: 1.6 !important;
         font-size: 14px !important;
+    }
+    
+    /* Fix text display issues globally */
+    * {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Specific fixes for form elements */
+    input, textarea, select {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: none !important;
+    }
+    
+    /* Fix text in buttons */
+    button {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        max-width: none !important;
+        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--border) !important;
+        background: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        transition: var(--transition-normal) !important;
+    }
+
+    button:hover {
+        background: var(--surface-elevated) !important;
+        border-color: var(--accent) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: var(--shadow-card) !important;
+    }
+
+    .stButton>button {
+        width: 100% !important;
+        padding: 0.6rem 0.9rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.2px !important;
+    }
+    
+    /* Fix text in labels */
+    label {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        max-width: none !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Fix text in paragraphs and spans */
+    p, span, div {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
     }
 
     /* Add animated pattern overlay */
@@ -579,6 +1324,13 @@ def load_custom_css():
         font-size: 0.875rem !important;
         transition: all var(--transition-fast) !important;
         backdrop-filter: blur(10px) !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: none !important;
+        line-height: 1.4 !important;
     }
 
     .stTextInput > div > div > input:focus,
@@ -990,8 +1742,307 @@ def load_custom_css():
     }
 
     /* Sidebar Enhancements */
+    .stSidebar {
+        min-width: 300px !important;
+        width: 300px !important;
+        max-width: 300px !important;
+        padding: 1rem !important;
+        overflow-y: auto !important;
+    }
+    
     .stSidebar .stSelectbox, .stSidebar .stTextInput {
+        margin-bottom: 1.5rem !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        clear: both !important;
+        display: block !important;
+    }
+    
+    /* Prevent overlapping with sidebar elements */
+    .stSidebar > div {
         margin-bottom: 1rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    
+    .stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar h4, .stSidebar h5, .stSidebar h6 {
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        clear: both !important;
+    }
+    
+    .stSidebar .stMarkdown {
+        margin-bottom: 1rem !important;
+        clear: both !important;
+    }
+    
+    /* Sidebar Title Styling - Match Theme Combinations */
+    .stSidebar h1 {
+        background: var(--gradient-accent) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        margin: 0 0 0.5rem 0 !important;
+        padding: 0.5rem 0 !important;
+        border-bottom: 2px solid var(--border) !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+    
+    .stSidebar h1::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: -2px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 60% !important;
+        height: 2px !important;
+        background: var(--gradient-accent) !important;
+        border-radius: var(--radius-full) !important;
+    }
+    
+    /* Sidebar subtitle styling */
+    .stSidebar .stMarkdown p {
+        text-align: center !important;
+        color: var(--text-secondary) !important;
+        font-style: italic !important;
+        margin: 0 0 1rem 0 !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Ensure proper spacing for all sidebar sections */
+    .stSidebar .stRadio, .stSidebar .stCheckbox {
+        margin-bottom: 1rem !important;
+        clear: both !important;
+    }
+    
+    .stSidebar .stSubheader {
+        margin-top: 1.5rem !important;
+        margin-bottom: 0.75rem !important;
+        color: var(--text-primary) !important;
+        font-weight: 600 !important;
+        border-left: 3px solid var(--accent) !important;
+        padding-left: 0.75rem !important;
+        clear: both !important;
+    }
+    
+    /* Theme Toggle Specific Styling */
+    .stSidebar .stColumns {
+        margin-bottom: 1rem !important;
+        clear: both !important;
+        padding: 0.75rem !important;
+        background: var(--surface-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: var(--shadow-card) !important;
+    }
+    
+    .stSidebar .stColumns > div {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Theme toggle selectbox styling */
+    .stSidebar .stColumns .stSelectbox {
+        margin-bottom: 0 !important;
+    }
+    
+    .stSidebar .stColumns .stSelectbox label {
+        font-size: 0.8rem !important;
+        color: var(--text-secondary) !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .stSidebar .stColumns .stSelectbox > div > div > div {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.6rem !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    /* Ensure theme toggle doesn't overlap */
+    .stSidebar [data-testid="stSidebar"] > div:first-child {
+        margin-bottom: 1rem !important;
+        padding-bottom: 1rem !important;
+        border-bottom: 1px solid var(--border) !important;
+    }
+    
+    /* Add visual separator after theme toggle */
+    .stSidebar .stColumns::after {
+        content: '' !important;
+        display: block !important;
+        width: 100% !important;
+        height: 1px !important;
+        background: var(--gradient-accent) !important;
+        margin: 0.75rem 0 0 0 !important;
+        border-radius: var(--radius-full) !important;
+    }
+    
+    /* Navigation section spacing */
+    .stSidebar .stRadio {
+        margin-top: 1rem !important;
+        margin-bottom: 1.5rem !important;
+        padding: 0.75rem !important;
+        background: var(--surface-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: var(--shadow-card) !important;
+    }
+    
+    /* Navigation radio buttons styling */
+    .stSidebar .stRadio label {
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .stSidebar .stRadio [role="radiogroup"] {
+        gap: 0.5rem !important;
+    }
+    
+    .stSidebar .stRadio [role="radio"] {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 0.5rem !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .stSidebar .stRadio [role="radio"]:hover {
+        background: var(--surface-elevated) !important;
+        border-color: var(--accent) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .stSidebar .stRadio [role="radio"][aria-checked="true"] {
+        background: var(--gradient-accent) !important;
+        border-color: var(--accent) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    /* AI Configuration section spacing */
+    .stSidebar .stSelectbox:first-of-type {
+        margin-top: 1rem !important;
+    }
+    
+    /* AI Configuration section container */
+    .stSidebar .stSubheader + .stSelectbox {
+        margin-top: 0.5rem !important;
+    }
+    
+    /* AI Configuration section styling */
+    .stSidebar .stSubheader + .stSelectbox,
+    .stSidebar .stSubheader + .stSelectbox + .stSelectbox,
+    .stSidebar .stSubheader + .stSelectbox + .stSelectbox + .stTextInput {
+        padding: 0.75rem !important;
+        background: var(--surface-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: var(--shadow-card) !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* AI Configuration section label styling */
+    .stSidebar .stSubheader + .stSelectbox label,
+    .stSidebar .stSubheader + .stSelectbox + .stSelectbox label,
+    .stSidebar .stSubheader + .stSelectbox + .stSelectbox + .stTextInput label {
+        color: var(--text-primary) !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Fix sidebar text display issues */
+    .stSidebar .stSelectbox > div > div > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        min-width: 100% !important;
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0.5rem !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+    
+    /* Ensure selectbox container has proper spacing */
+    .stSidebar .stSelectbox > div {
+        margin-bottom: 1rem !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+    
+    /* Fix selectbox label spacing */
+    .stSidebar .stSelectbox label {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        max-width: none !important;
+        display: block !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0.25rem !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+    
+    /* Fix sidebar dropdown options */
+    .stSidebar .stSelectbox [data-baseweb="select"] {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    .stSidebar .stSelectbox [data-baseweb="select"] > div {
+        width: 100% !important;
+        min-width: 100% !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    
+    /* Fix sidebar text input */
+    .stSidebar .stTextInput > div > div > input {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: none !important;
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.5rem !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+    
+    /* Ensure text input container has proper spacing */
+    .stSidebar .stTextInput > div {
+        margin-bottom: 1rem !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+    
+    /* Fix text input label spacing */
+    .stSidebar .stTextInput label {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        max-width: none !important;
+        display: block !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0.25rem !important;
+        position: relative !important;
+        z-index: 5 !important;
     }
 
     .stSidebar .stMarkdown h3 {
@@ -1084,6 +2135,129 @@ def load_custom_css():
         border-radius: var(--radius-md) !important;
         backdrop-filter: blur(20px) !important;
     }
+    
+    /* Fix text display issues in selectboxes */
+    .stSelectbox > div > div > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        min-width: 100% !important;
+        width: 100% !important;
+        max-width: none !important;
+        padding-right: 2rem !important;
+    }
+    
+    .stSelectbox > div > div > div > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    /* Fix dropdown text display */
+    .stSelectbox [data-baseweb="select"] > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] > div > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        min-width: 100% !important;
+    }
+    
+    /* Fix selectbox label text */
+    .stSelectbox label {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        max-width: none !important;
+        display: block !important;
+    }
+    
+    /* Fix dropdown menu text display */
+    .stSelectbox [data-baseweb="menu"] {
+        max-width: none !important;
+        width: auto !important;
+        min-width: 200px !important;
+    }
+    
+    .stSelectbox [data-baseweb="menu"] ul {
+        max-width: none !important;
+        width: auto !important;
+        min-width: 200px !important;
+    }
+    
+    .stSelectbox [data-baseweb="menu"] li {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        max-width: none !important;
+        width: auto !important;
+        min-width: 200px !important;
+        padding: 0.5rem 1rem !important;
+        background: var(--card-bg) !important;
+        border-bottom: 1px solid var(--border) !important;
+    }
+    
+    .stSelectbox [data-baseweb="menu"] li > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+        max-width: none !important;
+        width: auto !important;
+        min-width: 200px !important;
+    }
+
+    .stSelectbox [data-baseweb="menu"] li:hover {
+        background: var(--surface-elevated) !important;
+    }
+
+    .stSelectbox [data-baseweb="menu"] li[aria-selected="true"] {
+        background: var(--gradient-accent) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    /* Fix BaseWeb select component text */
+    [data-baseweb="select"] {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    [data-baseweb="select"] > div {
+        width: 100% !important;
+        min-width: 100% !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    
+    [data-baseweb="select"] > div > div {
+        width: 100% !important;
+        min-width: 100% !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Re-enable select dropdown input for proper keyboard/mouse behavior */
+    .stSelectbox input[type="search"],
+    .stSelectbox input[type="text"],
+    .stSelectbox [data-baseweb="select"] input {
+        display: initial !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    /* Ensure BaseWeb select dropdown menu appears above other elements */
+    .stSelectbox [data-baseweb="menu"],
+    [data-baseweb="select"] [data-baseweb="menu"],
+    .stSidebar [data-baseweb="menu"] {
+        z-index: 9999 !important;
+    }
 
     /* Progress Bar */
     .stProgress > div > div > div > div {
@@ -1161,31 +2335,662 @@ def load_custom_css():
             transition-duration: 0.01ms !important;
         }
     }
+    
+    /* ========================================
+       MODERN CARD STYLING
+       ======================================== */
+    
+    .modern-card {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        box-shadow: var(--shadow-card) !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1rem !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        transition: var(--transition-normal) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .modern-card::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 3px !important;
+        background: var(--gradient-accent) !important;
+        opacity: 0.8 !important;
+    }
+    
+    .modern-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: var(--shadow-hover) !important;
+        border-color: var(--accent) !important;
+    }
+    
+    /* ========================================
+       TOAST NOTIFICATIONS
+       ======================================== */
+    
+    .toast {
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 1rem 1.5rem !important;
+        box-shadow: var(--shadow-hover) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        color: var(--text-primary) !important;
+        z-index: 1000 !important;
+        animation: slideIn 0.3s ease-out !important;
+    }
+    
+    .toast.success {
+        border-left: 4px solid var(--success) !important;
+    }
+    
+    .toast.info {
+        border-left: 4px solid var(--info) !important;
+    }
+    
+    .toast.warning {
+        border-left: 4px solid var(--warning) !important;
+    }
+    
+    .toast.error {
+        border-left: 4px solid var(--danger) !important;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-out !important;
+    }
+    
+    /* ========================================
+       HERO SECTION STYLING
+       ======================================== */
+    
+    .hero-section {
+        text-align: center !important;
+        padding: 4rem 2rem !important;
+        background: var(--gradient-glass) !important;
+        border-radius: var(--radius-xl) !important;
+        margin-bottom: 2rem !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .hero-section::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: var(--gradient-accent) !important;
+        opacity: 0.05 !important;
+        z-index: -1 !important;
+    }
+    
+    .hero-title {
+        font-size: 3.5rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 1rem !important;
+        background: var(--gradient-accent) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        animation: titleGlow 3s ease-in-out infinite alternate !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.5rem !important;
+        color: var(--text-secondary) !important;
+        margin-bottom: 1.5rem !important;
+        font-weight: 500 !important;
+    }
+    
+    .hero-description {
+        font-size: 1.1rem !important;
+        color: var(--text-secondary) !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
+        line-height: 1.6 !important;
+    }
+    
+    @keyframes titleGlow {
+        0% { filter: brightness(1); }
+        100% { filter: brightness(1.2); }
+    }
+    
+    /* ========================================
+       TEAM MEMBER STYLING
+       ======================================== */
+    
+    .team-member {
+        text-align: center !important;
+        padding: 2rem 1rem !important;
+        background: var(--surface) !important;
+        border-radius: var(--radius-lg) !important;
+        border: 1px solid var(--border) !important;
+        transition: var(--transition-normal) !important;
+        height: 100% !important;
+    }
+    
+    .team-member:hover {
+        transform: translateY(-5px) !important;
+        box-shadow: var(--shadow-hover) !important;
+        border-color: var(--accent) !important;
+    }
+    
+    .member-icon {
+        font-size: 3rem !important;
+        margin-bottom: 1rem !important;
+        display: block !important;
+    }
+    
+    .team-member h3 {
+        color: var(--text-primary) !important;
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .member-role {
+        color: var(--accent) !important;
+        font-weight: 500 !important;
+        font-size: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .member-description {
+        color: var(--text-secondary) !important;
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+        text-align: left !important;
+    }
+    
+    /* Toggle Card Animation Styles */
+    .team-member.collapsed {
+        max-height: 300px !important;
+        overflow: hidden !important;
+        transition: all 0.3s ease-in-out !important;
+    }
+    
+    .team-member.expanded {
+        max-height: 800px !important;
+        overflow: visible !important;
+        transition: all 0.3s ease-in-out !important;
+        transform: scale(1.02) !important;
+        box-shadow: var(--shadow-hover) !important;
+        border-color: var(--accent) !important;
+    }
+    
+    .member-details {
+        margin-top: 1rem !important;
+        padding-top: 1rem !important;
+        border-top: 1px solid var(--border) !important;
+        animation: slideDown 0.3s ease-out !important;
+    }
+    
+    .member-skills {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        margin: 1rem 0 !important;
+    }
+    
+    .skill-tag {
+        background: var(--accent) !important;
+        color: var(--bg-primary) !important;
+        padding: 0.25rem 0.75rem !important;
+        border-radius: var(--radius-sm) !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        transition: var(--transition-fast) !important;
+    }
+    
+    .skill-tag:hover {
+        background: var(--accent-hover) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .member-achievements {
+        margin-top: 1rem !important;
+        text-align: left !important;
+    }
+    
+    .member-achievements h4 {
+        color: var(--text-primary) !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .member-achievements ul {
+        color: var(--text-secondary) !important;
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+        padding-left: 1.5rem !important;
+    }
+    
+    .member-achievements li {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0 !important;
+            transform: translateY(-10px) !important;
+        }
+        to {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+    }
+    
+    /* Toggle Button Styling */
+    .stButton > button[kind="secondary"] {
+        background: var(--surface) !important;
+        border: 2px solid var(--accent) !important;
+        color: var(--accent) !important;
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 1.5rem !important;
+        transition: var(--transition-normal) !important;
+        margin: 0 auto 1rem auto !important;
+        display: block !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        background: var(--accent) !important;
+        color: var(--bg-primary) !important;
+        transform: scale(1.1) !important;
+        box-shadow: var(--shadow-hover) !important;
+    }
+    
+    /* ========================================
+       WORKFLOW STEP STYLING
+       ======================================== */
+    
+    .workflow-step {
+        text-align: center !important;
+        padding: 1.5rem 1rem !important;
+        background: var(--surface) !important;
+        border-radius: var(--radius-lg) !important;
+        border: 1px solid var(--border) !important;
+        transition: var(--transition-normal) !important;
+        height: 100% !important;
+        position: relative !important;
+    }
+    
+    .workflow-step:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: var(--shadow-hover) !important;
+        border-color: var(--accent) !important;
+    }
+    
+    .step-number {
+        position: absolute !important;
+        top: -15px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: var(--gradient-accent) !important;
+        color: var(--text-inverse) !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .step-icon {
+        font-size: 2.5rem !important;
+        margin: 1rem 0 !important;
+        display: block !important;
+    }
+    
+    .workflow-step h4 {
+        color: var(--text-primary) !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .workflow-step p {
+        color: var(--text-secondary) !important;
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* ========================================
+       CTA SECTION STYLING
+       ======================================== */
+    
+    .cta-section {
+        text-align: center !important;
+        padding: 3rem 2rem !important;
+        background: var(--gradient-glass) !important;
+        border-radius: var(--radius-xl) !important;
+        margin-top: 2rem !important;
+        border: 1px solid var(--border) !important;
+    }
+    
+    .cta-section h2 {
+        color: var(--text-primary) !important;
+        font-size: 2rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .cta-section p {
+        color: var(--text-secondary) !important;
+        font-size: 1.1rem !important;
+        margin: 0 !important;
+    }
+    
+    /* ========================================
+       FOOTER STYLING
+       ======================================== */
+    
+    .footer-section {
+        margin-top: 4rem !important;
+        padding: 3rem 2rem 1rem !important;
+        background: var(--surface) !important;
+        border-top: 1px solid var(--border) !important;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+    }
+    
+    .footer-content {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .footer-main h3 {
+        color: var(--text-primary) !important;
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .footer-main p {
+        color: var(--text-secondary) !important;
+        line-height: 1.6 !important;
+    }
+    
+    .footer-team h4,
+    .footer-mission h4 {
+        color: var(--text-primary) !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .team-links {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .team-links span {
+        color: var(--text-secondary) !important;
+        font-size: 0.9rem !important;
+        padding: 0.25rem 0 !important;
+    }
+    
+    .footer-mission p {
+        color: var(--text-secondary) !important;
+        line-height: 1.6 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .footer-bottom {
+        text-align: center !important;
+        padding-top: 2rem !important;
+        border-top: 1px solid var(--border) !important;
+    }
+    
+    .footer-bottom p {
+        color: var(--text-muted) !important;
+        font-size: 0.9rem !important;
+        margin: 0 !important;
+    }
+    
+    @media (max-width: 768px) {
+        .footer-content {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+        }
+        
+        .hero-title {
+            font-size: 2.5rem !important;
+        }
+        
+        .hero-section {
+            padding: 2rem 1rem !important;
+        }
+    }
+    
+    /* ========================================
+       ENHANCED BUTTON STYLING
+       ======================================== */
+    
+    .stButton > button {
+        background: var(--gradient-accent) !important;
+        color: var(--text-inverse) !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: var(--transition-normal) !important;
+        box-shadow: var(--shadow) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .stButton > button::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: var(--shadow-hover) !important;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100% !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0) !important;
+        box-shadow: var(--shadow) !important;
+    }
+    
+    /* ========================================
+       ENHANCED FORM ELEMENTS
+       ======================================== */
+    
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > div {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.75rem 1rem !important;
+        color: var(--text-primary) !important;
+        transition: var(--transition-normal) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus,
+    .stSelectbox > div > div > div:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+        background: var(--surface-elevated) !important;
+        outline: none !important;
+    }
+    
+    .stTextInput > div > div > input:hover,
+    .stTextArea > div > div > textarea:hover,
+    .stSelectbox > div > div > div:hover {
+        border-color: var(--accent) !important;
+        background: var(--surface-elevated) !important;
+    }
+    
+    /* ========================================
+       ENHANCED SIDEBAR
+       ======================================== */
+    
+    .css-1d391kg {
+        background: var(--surface) !important;
+        border-right: 1px solid var(--border) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    /* ========================================
+       ENHANCED TABS
+       ======================================== */
+    
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid var(--border) !important;
+        margin-bottom: 1.5rem !important;
+        background: var(--card-bg) !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.5rem !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: var(--text-secondary) !important;
+        padding: 0.75rem 1.25rem !important;
+        margin-right: 0.5rem !important;
+        border-radius: var(--radius-md) !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--text-primary) !important;
+        background: var(--surface-elevated) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        color: var(--text-primary) !important;
+        background: var(--gradient-accent) !important;
+        box-shadow: var(--shadow) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    /* ========================================
+       ENHANCED ALERTS
+       ======================================== */
+    
+    .stAlert {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: var(--shadow-card) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+    
+    /* ========================================
+       ENHANCED PROGRESS BARS
+       ======================================== */
+    
+    .stProgress > div > div > div > div {
+        background: var(--gradient-accent) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    .stProgress > div {
+        background: var(--surface) !important;
+        border-radius: var(--radius-sm) !important;
+        border: 1px solid var(--border) !important;
+    }
+    
+    /* ========================================
+       ENHANCED SCROLLBARS
+       ======================================== */
+    
+    ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px !important;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--surface) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--gradient-accent) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--gradient-primary) !important;
+    }
+    
+    /* ========================================
+       RESPONSIVE DESIGN
+       ======================================== */
+    
+    @media (max-width: 768px) {
+        .modern-card {
+            padding: 1rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .stButton > button {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.9rem !important;
+        }
+    }
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
-def create_theme_toggle():
-    """Create dark/light mode toggle button"""
-    if 'dark_mode' not in st.session_state:
-        st.session_state.dark_mode = False
-    
-    # Theme toggle button
-    theme_icon = "🌙" if not st.session_state.dark_mode else "☀️"
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col3:
-        if st.button(theme_icon, key="theme_toggle", help="Toggle dark/light mode"):
-            st.session_state.dark_mode = not st.session_state.dark_mode
-            st.rerun()
-    
-    # Apply theme to body
-    theme_class = "dark" if st.session_state.dark_mode else "light"
-    st.markdown(f"""
-    <script>
-    document.body.setAttribute('data-theme', '{theme_class}');
-    </script>
-    """, unsafe_allow_html=True)
+# This function is now defined above in the theme management section
 
 def create_card(title, content, subtitle=None, footer=None, card_type="default"):
     """Create a modern card component"""
@@ -1294,70 +3099,79 @@ class SentinelAIApp:
         st.sidebar.title("🛡️ SentinelAI v2")
         st.sidebar.markdown("*Precision Cybersecurity Analysis*")
         
-        # LLM Configuration
-        st.sidebar.subheader("🤖 AI Configuration")
+        # Add theme toggle at the top
+        create_theme_toggle()
         
-        llm_providers = [
-            "OpenAI", "Anthropic", "Google", "Cohere", 
-            "Hugging Face", "Mistral", "Llama", "Local"
-        ]
+        # Navigation (expander + clearer grouping)
+        with st.sidebar.expander("🧭 Navigation", expanded=True):
+            page = st.radio(
+                "Choose Page:",
+                ["🏠 Home", "🔍 Security Scan", "📊 Dashboard", "📋 Reports", "⚙️ Settings"],
+                index=0,
+                help="Navigate between major sections"
+            )
         
-        selected_provider = st.sidebar.selectbox(
-            "LLM Provider",
-            llm_providers,
-            index=0
-        )
+        # Store current page in session state
+        st.session_state.current_page = page
         
-        # Model selection based on provider
-        model_options = self.get_model_options(selected_provider)
-        selected_model = st.sidebar.selectbox(
-            "Model",
-            model_options,
-            index=0
-        )
-        
-        # API Key input (encrypted storage)
-        api_key = st.sidebar.text_input(
-            f"{selected_provider} API Key",
-            type="password",
-            help="API key will be encrypted and stored locally"
-        )
-        
-        if api_key:
-            self.security_manager.store_encrypted_key(selected_provider.lower(), api_key)
-        
-        # VirusTotal Configuration
-        st.sidebar.subheader("🔍 VirusTotal Integration")
-        vt_enabled = st.sidebar.checkbox("Enable VirusTotal", value=True)
-        
-        if vt_enabled:
-            vt_api_key = st.sidebar.text_input(
-                "VirusTotal API Key",
+        # LLM Configuration (Structured, contextual hints)
+        with st.sidebar.expander("🤖 AI Configuration", expanded=True):
+            llm_providers = [
+                "OpenAI", "Anthropic", "Google", "Groq", "Cohere", 
+                "Hugging Face", "Mistral", "Llama", "Local"
+            ]
+            selected_provider = st.selectbox(
+                "LLM Provider",
+                llm_providers,
+                index=0,
+                help="Pick the provider that matches your API access"
+            )
+            # Model selection based on provider
+            model_options = self.get_model_options(selected_provider)
+            selected_model = st.selectbox(
+                "Model",
+                model_options,
+                index=0,
+                help="Choose a model appropriate for analysis and summarization"
+            )
+            # API Key input (encrypted storage)
+            api_key = st.text_input(
+                f"{selected_provider} API Key",
                 type="password",
-                help="Optional: Leave empty for public API limits"
+                help="Key is encrypted locally; leave blank to use environment vars"
             )
-            
-            if vt_api_key:
-                self.security_manager.store_encrypted_key("virustotal", vt_api_key)
+            if api_key:
+                self.security_manager.store_encrypted_key(selected_provider.lower(), api_key)
         
-        # Scan Configuration
-        st.sidebar.subheader("⚙️ Scan Settings")
+        # VirusTotal Configuration (Expander)
+        with st.sidebar.expander("🔍 VirusTotal Integration", expanded=False):
+            vt_enabled = st.checkbox("Enable VirusTotal", value=True)
+            if vt_enabled:
+                vt_api_key = st.text_input(
+                    "VirusTotal API Key",
+                    type="password",
+                    help="Optional: Leave empty for public API limits"
+                )
+                if vt_api_key:
+                    self.security_manager.store_encrypted_key("virustotal", vt_api_key)
         
-        scan_mode = st.sidebar.radio(
-            "Scan Mode",
-            ["Quick Scan", "Deep Scan", "Custom"]
-        )
-        
-        # VAPT Settings
-        vapt_enabled = st.sidebar.checkbox("Enable VAPT", value=False)
-        
-        if vapt_enabled:
-            st.sidebar.warning("⚠️ VAPT scanning can be intrusive. Use responsibly.")
-            vapt_scope = st.sidebar.radio(
-                "VAPT Scope",
-                ["Host Only", "Local Subnet"],
-                help="Host Only is recommended for safety"
+        # Scan Configuration (Expander)
+        with st.sidebar.expander("⚙️ Scan Settings", expanded=False):
+            scan_mode = st.radio(
+                "Scan Mode",
+                ["Quick Scan", "Deep Scan", "Custom"]
             )
+        
+        # VAPT Settings (Expander)
+        with st.sidebar.expander("🧪 VAPT Settings", expanded=False):
+            vapt_enabled = st.checkbox("Enable VAPT", value=False)
+            if vapt_enabled:
+                st.warning("⚠️ VAPT scanning can be intrusive. Use responsibly.")
+                vapt_scope = st.radio(
+                    "VAPT Scope",
+                    ["Host Only", "Local Subnet"],
+                    help="Host Only is recommended for safety"
+                )
         
         return {
             'llm_provider': selected_provider,
@@ -1371,14 +3185,67 @@ class SentinelAIApp:
     def get_model_options(self, provider: str) -> List[str]:
         """Get available models for the selected provider"""
         model_map = {
-            "OpenAI": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-            "Anthropic": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-            "Google": ["gemini-pro", "gemini-pro-vision"],
-            "Cohere": ["command", "command-light"],
-            "Hugging Face": ["mistral-7b", "llama-2-7b", "code-llama"],
-            "Mistral": ["mistral-large", "mistral-medium", "mistral-small"],
-            "Llama": ["llama-2-70b", "llama-2-13b", "llama-2-7b"],
-            "Local": ["local-model"]
+            "OpenAI": [
+                # GPT-5 Series (Latest)
+                "gpt-5", "gpt-5-pro", "gpt-5-mini",
+                # GPT-4 Series
+                "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4",
+                # o Series (Reasoning-Focused)
+                "o3-pro", "o3", "o3-mini", "o4-mini",
+                # GPT-3.5 Series
+                "gpt-3.5-turbo",
+                # Codex Series (Developer-Focused)
+                "codex"
+            ],
+            "Anthropic": [
+                "claude-3.5-sonnet", "claude-3-opus", "claude-3-sonnet", "claude-3-haiku",
+                "claude-2.1", "claude-2.0", "claude-instant"
+            ],
+            "Google": [
+                # Gemini 2.5 Series (Latest)
+                "gemini-2.5-pro-diamond", "gemini-2.5-pro", "gemini-2.5-flash-spark", 
+                "gemini-2.5-flash", "gemini-2.5-flash-lite",
+                # Gemini 2.0 Series
+                "gemini-2.0-pro", "gemini-2.0-flash", "gemini-2.0-flash-lite",
+                # Gemini 1.5 Series
+                "gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-lite",
+                # Gemini 1.0 Series
+                "gemini-1.0-ultra", "gemini-1.0-pro", "gemini-1.0-nano",
+                # Specialized Models
+                "gemini-nano-banana", "gemini-veo-3", "gemini-robotics", "gemini-robotics-er"
+            ],
+            "Groq": [
+                # Production Models
+                "llama-3.1-8b", "llama-3.3-70b", "llama-guard-4-12b",
+                "gpt-oss-20b", "gpt-oss-120b", "whisper-large-v3", "whisper-large-v3-turbo",
+                # Groq-Optimized Systems
+                "compound", "compound-mini",
+                # Tool-Use Models
+                "llama-3-groq-70b-tool-use", "llama-3-groq-8b-tool-use"
+            ],
+            "Cohere": [
+                "command-r-plus", "command-r", "command", "command-light",
+                "command-nightly", "command-light-nightly"
+            ],
+            "Hugging Face": [
+                "mistral-7b", "llama-2-7b", "llama-2-13b", "llama-2-70b",
+                "code-llama", "codellama", "falcon-7b", "falcon-40b",
+                "bloom-560m", "bloom-1b7", "bloom-3b", "bloom-7b1"
+            ],
+            "Mistral": [
+                "mistral-large", "mistral-medium", "mistral-small",
+                "mixtral-8x7b", "mixtral-8x22b", "codestral"
+            ],
+            "Llama": [
+                "llama-3.1-8b", "llama-3.1-70b", "llama-3.1-405b",
+                "llama-3-8b", "llama-3-70b", "llama-3-405b",
+                "llama-2-7b", "llama-2-13b", "llama-2-70b",
+                "llama-2-7b-chat", "llama-2-13b-chat", "llama-2-70b-chat"
+            ],
+            "Local": [
+                "local-model", "ollama-llama3", "ollama-mistral", "ollama-codellama",
+                "local-gpt", "local-claude", "custom-model"
+            ]
         }
         return model_map.get(provider, ["default"])
     
@@ -1961,7 +3828,16 @@ class SentinelAIApp:
                 if config.get('vapt_scope') == 'Local Subnet':
                     st.warning("🚨 Performing subnet scan - ensure you have authorization!")
                 
-                vapt_results = vapt_agent.assess_host('127.0.0.1')  # Default to localhost
+                # Execute VAPT assessment
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    vapt_results = loop.run_until_complete(
+                        vapt_agent.execute('127.0.0.1', '1-1000', 'full_assessment', 'host_only')
+                    )
+                finally:
+                    loop.close()
                 
                 st.session_state.scan_progress.update({
                     'status': 'VAPT Agent: Vulnerability assessment complete',
@@ -1992,7 +3868,8 @@ class SentinelAIApp:
             }
             
             # AI Analysis with comprehensive reasoning
-            ti_agent = ThreatIntelligenceAgent(config['llm_provider'], config['llm_model'])
+            llm_api_key = self.security_manager.get_decrypted_key(config['llm_provider'].lower())
+            ti_agent = ThreatIntelligenceAgent(config['llm_provider'], config['llm_model'], llm_api_key)
             ai_analysis = ti_agent.analyze_threats(combined_results)
             
             # Generate dual storytelling
@@ -2433,8 +4310,64 @@ class SentinelAIApp:
     
     def run_vapt_assessment(self, target: str, port_range: str, vapt_type: str, config: Dict):
         """Execute VAPT assessment"""
-        # Implementation for VAPT assessment
-        st.info("VAPT assessment functionality - Implementation in progress")
+        try:
+            with st.spinner("🎯 Running VAPT assessment..."):
+                # Initialize VAPT agent
+                vapt_agent = VAPTAgent()
+                
+                # Determine scan scope
+                scope = 'host_only' if config.get('vapt_scope') == 'Host Only' else 'local_subnet'
+                
+                # Execute VAPT assessment
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    results = loop.run_until_complete(
+                        vapt_agent.execute(target, port_range, vapt_type, scope)
+                    )
+                finally:
+                    loop.close()
+                
+                # Display results
+                if results.get('success', True):
+                    st.success("✅ VAPT assessment completed successfully!")
+                    
+                    # Display vulnerabilities
+                    vulnerabilities = results.get('vulnerabilities', [])
+                    if vulnerabilities:
+                        st.subheader("🚨 Vulnerabilities Found")
+                        for vuln in vulnerabilities:
+                            with st.expander(f"{vuln.get('type', 'Unknown')} - {vuln.get('severity', 'Unknown')}"):
+                                st.write(f"**Description**: {vuln.get('description', 'No description')}")
+                                st.write(f"**Service**: {vuln.get('service', 'Unknown')}")
+                                st.write(f"**Port**: {vuln.get('port', 'Unknown')}")
+                                st.write(f"**Recommendation**: {vuln.get('recommendation', 'No recommendation')}")
+                    else:
+                        st.info("✅ No vulnerabilities found in the target range.")
+                    
+                    # Display scan statistics
+                    stats = results.get('scan_statistics', {})
+                    if stats:
+                        st.subheader("📊 Scan Statistics")
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric("Hosts Scanned", stats.get('hosts_scanned', 0))
+                        with col2:
+                            st.metric("Ports Scanned", stats.get('ports_scanned', 0))
+                        with col3:
+                            st.metric("Services Detected", stats.get('services_detected', 0))
+                        with col4:
+                            st.metric("Vulnerabilities", stats.get('vulnerabilities_found', 0))
+                else:
+                    st.error("❌ VAPT assessment failed. Check the logs for details.")
+                    if 'error' in results:
+                        st.error(f"Error: {results['error']}")
+                        
+        except Exception as e:
+            logger.error(f"Error in VAPT assessment: {e}")
+            st.error(f"VAPT assessment failed: {str(e)}")
+            st.info("💡 Make sure you have the required dependencies installed (python-nmap)")
     
     def generate_executive_summary(self, results: Dict) -> str:
         """Generate AI-powered executive summary"""
@@ -2882,40 +4815,244 @@ class SentinelAIApp:
     def run(self):
         """Main application entry point"""
         try:
-            # Add theme toggle
-            create_theme_toggle()
-            
             # Render sidebar configuration
             config = self.render_sidebar()
             
-            # Enhanced main header with animation
-            create_animated_header(
-                title="SentinelAI v2",
-                subtitle="Enterprise-Grade Cybersecurity Analysis Platform",
-                icon="🛡️"
-            )
+            # Get current page from session state
+            current_page = st.session_state.get('current_page', '🏠 Home')
             
-            # Render main application tabs
-            self.render_main_tabs(config)
+            # Route to appropriate page
+            if current_page == '🏠 Home':
+                self.render_home_page()
+            elif current_page == '🔍 Security Scan':
+                self.render_scan_page(config)
+            elif current_page == '📊 Dashboard':
+                self.render_dashboard_page()
+            elif current_page == '📋 Reports':
+                self.render_reports_page()
+            elif current_page == '⚙️ Settings':
+                self.render_settings_page()
+            else:
+                self.render_home_page()
             
-            # Enhanced footer
-            st.markdown("---")
-            footer_html = """
-            <div style="text-align: center; padding: 2rem 0; color: var(--text-secondary);">
-                <p style="margin: 0; font-size: 0.9rem;">
-                    <strong>SentinelAI v2</strong> | 
-                    Built with Streamlit, LangChain, and Advanced AI
-                </p>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem;">
-                    © 2024 Dr. Alexandra Chen's Cybersecurity Research Lab
-                </p>
-            </div>
-            """
-            st.markdown(footer_html, unsafe_allow_html=True)
+            # Add footer to all pages
+            create_footer()
             
         except Exception as e:
             logger.error(f"Application error: {str(e)}")
-            st.error(f"Application error: {str(e)}")
+            st.error(f"An error occurred: {str(e)}")
+            st.info("Please refresh the page and try again.")
+    
+    def render_home_page(self):
+        """Render the home page"""
+        create_home_page()
+    
+    def render_scan_page(self, config):
+        """Render the security scan page"""
+        # Enhanced main header with animation
+        create_animated_header(
+            title="Security Scan",
+            subtitle="Comprehensive Threat Analysis",
+            icon="🔍"
+        )
+        
+        # Render main application tabs
+        self.render_main_tabs(config)
+    
+    def render_dashboard_page(self):
+        """Render the dashboard page"""
+        st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+        st.markdown("## 📊 Security Dashboard")
+        
+        # Dashboard content
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Scans", "1,234", "12%")
+        with col2:
+            st.metric("Threats Detected", "45", "8%")
+        with col3:
+            st.metric("Vulnerabilities", "23", "-2%")
+        with col4:
+            st.metric("Risk Score", "7.2/10", "0.3")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    def render_reports_page(self):
+        """Render the reports page"""
+        st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+        st.markdown("## 📋 Security Reports")
+        st.info("Report generation functionality will be implemented here.")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    def render_settings_page(self):
+        """Render the settings page"""
+        st.markdown('<div class="modern-card fade-in">', unsafe_allow_html=True)
+        st.markdown("## ⚙️ Application Settings")
+        
+        # LLM Configuration Testing
+        st.markdown("### 🤖 LLM Configuration Testing")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("#### Current Configuration")
+            current_config = self.config_manager.get_current_llm_config()
+            if current_config:
+                st.json(current_config)
+            else:
+                st.warning("No LLM configuration found")
+        
+        with col2:
+            st.markdown("#### Test LLM Connection")
+            
+            # Get current config from sidebar
+            config = self.render_sidebar()
+            
+            if st.button("🧪 Test LLM Connection", type="primary"):
+                with st.spinner("Testing LLM connection..."):
+                    try:
+                        from core.llm_client import UniversalLLMClient
+                        
+                        # Get API key
+                        api_key = self.security_manager.get_decrypted_key(config['llm_provider'].lower())
+                        
+                        if not api_key:
+                            st.error("❌ No API key found for the selected provider")
+                        else:
+                            # Create client and test
+                            client = UniversalLLMClient(
+                                config['llm_provider'], 
+                                config['llm_model'], 
+                                api_key
+                            )
+                            
+                            test_result = client.test_connection()
+                            
+                            if test_result['success']:
+                                st.success("✅ LLM connection successful!")
+                                st.info(f"**Response:** {test_result['response']}")
+                                st.json(test_result)
+                            else:
+                                st.error(f"❌ LLM connection failed: {test_result['message']}")
+                                
+                    except Exception as e:
+                        st.error(f"❌ Error testing LLM: {str(e)}")
+        
+        # Model Information
+        st.markdown("### 📋 Available Models")
+        
+        # Create tabs for each provider
+        providers = ["OpenAI", "Anthropic", "Google", "Groq", "Cohere", "Hugging Face", "Mistral", "Llama", "Local"]
+        tabs = st.tabs(providers)
+        
+        for i, provider in enumerate(providers):
+            with tabs[i]:
+                models = self.get_model_options(provider)
+                
+                st.markdown(f"#### {provider} Models")
+                
+                # Group models by category
+                if provider == "OpenAI":
+                    st.markdown("**GPT-5 Series (Latest):**")
+                    gpt5_models = [m for m in models if 'gpt-5' in m]
+                    for model in gpt5_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**GPT-4 Series:**")
+                    gpt4_models = [m for m in models if 'gpt-4' in m and 'gpt-5' not in m]
+                    for model in gpt4_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**o Series (Reasoning-Focused):**")
+                    o_models = [m for m in models if m.startswith('o')]
+                    for model in o_models:
+                        st.markdown(f"• `{model}`")
+                        
+                elif provider == "Google":
+                    st.markdown("**Gemini 2.5 Series (Latest):**")
+                    gemini25_models = [m for m in models if '2.5' in m]
+                    for model in gemini25_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**Gemini 2.0 Series:**")
+                    gemini20_models = [m for m in models if '2.0' in m]
+                    for model in gemini20_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**Gemini 1.5 Series:**")
+                    gemini15_models = [m for m in models if '1.5' in m]
+                    for model in gemini15_models:
+                        st.markdown(f"• `{model}`")
+                        
+                elif provider == "Groq":
+                    st.markdown("**Production Models:**")
+                    production_models = [m for m in models if any(x in m for x in ['llama-3', 'gpt-oss', 'whisper'])]
+                    for model in production_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**Groq-Optimized Systems:**")
+                    groq_models = [m for m in models if m in ['compound', 'compound-mini']]
+                    for model in groq_models:
+                        st.markdown(f"• `{model}`")
+                    
+                    st.markdown("**Tool-Use Models:**")
+                    tool_models = [m for m in models if 'tool-use' in m]
+                    for model in tool_models:
+                        st.markdown(f"• `{model}`")
+                        
+                else:
+                    # Default listing for other providers
+                    for model in models:
+                        st.markdown(f"• `{model}`")
+        
+        # API Key Management
+        st.markdown("### 🔑 API Key Management")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("#### View API Key Status")
+            for provider in providers:
+                api_key = self.security_manager.get_decrypted_key(provider.lower())
+                if api_key:
+                    st.success(f"✅ {provider}: Configured")
+                else:
+                    st.warning(f"⚠️ {provider}: Not configured")
+        
+        with col2:
+            st.markdown("#### Clear API Keys")
+            if st.button("🗑️ Clear All API Keys", type="secondary"):
+                if st.session_state.get('confirm_clear_keys', False):
+                    # Clear all API keys
+                    for provider in providers:
+                        self.security_manager.clear_encrypted_key(provider.lower())
+                    st.success("✅ All API keys cleared")
+                    st.session_state.confirm_clear_keys = False
+                else:
+                    st.session_state.confirm_clear_keys = True
+                    st.warning("⚠️ Click again to confirm clearing all API keys")
+        
+        # System Information
+        st.markdown("### 💻 System Information")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("**Application Version:**")
+            st.info("SentinelAI v2.1")
+        
+        with col2:
+            st.markdown("**Python Version:**")
+            import sys
+            st.info(f"Python {sys.version.split()[0]}")
+        
+        with col3:
+            st.markdown("**Streamlit Version:**")
+            import streamlit as st_lib
+            st.info(f"Streamlit {st_lib.__version__}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def demo_ui_components():
     """Demo function showing all UI components"""
@@ -3020,8 +5157,14 @@ def hello_world():
 
 def main():
     """Application entry point"""
+    # Initialize theme state
+    initialize_theme_state()
+    
     # Load enhanced custom CSS
     load_custom_css()
+    
+    # Apply theme
+    apply_theme(st.session_state.theme)
     
     # Add demo option
     if st.sidebar.checkbox("Show UI Components Demo"):

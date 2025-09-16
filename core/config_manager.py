@@ -151,17 +151,56 @@ class ConfigManager:
             "OpenAI": {
                 "api_base": "https://api.openai.com/v1",
                 "max_tokens": base_config.get("max_tokens", 4000),
-                "temperature": base_config.get("temperature", 0.1)
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "OPENAI_API_KEY"
             },
             "Anthropic": {
                 "api_base": "https://api.anthropic.com",
                 "max_tokens": base_config.get("max_tokens", 4000),
-                "temperature": base_config.get("temperature", 0.1)
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "ANTHROPIC_API_KEY"
             },
             "Google": {
                 "api_base": "https://generativelanguage.googleapis.com",
                 "max_tokens": base_config.get("max_tokens", 4000),
-                "temperature": base_config.get("temperature", 0.1)
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "GOOGLE_API_KEY"
+            },
+            "Groq": {
+                "api_base": "https://api.groq.com/openai/v1",
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "GROQ_API_KEY"
+            },
+            "Cohere": {
+                "api_base": "https://api.cohere.ai/v1",
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "COHERE_API_KEY"
+            },
+            "Hugging Face": {
+                "api_base": "https://api-inference.huggingface.co/models",
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "HUGGINGFACE_API_KEY"
+            },
+            "Mistral": {
+                "api_base": "https://api.mistral.ai/v1",
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "MISTRAL_API_KEY"
+            },
+            "Llama": {
+                "api_base": "https://api.llama.ai/v1",
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": "LLAMA_API_KEY"
+            },
+            "Local": {
+                "api_base": "http://localhost:11434",  # Default Ollama endpoint
+                "max_tokens": base_config.get("max_tokens", 4000),
+                "temperature": base_config.get("temperature", 0.1),
+                "api_key_env": None
             }
         }
         
@@ -208,14 +247,67 @@ class ConfigManager:
     def _validate_llm_combination(self, provider: str, model: str) -> bool:
         """Validate that the provider/model combination is supported"""
         supported_combinations = {
-            "OpenAI": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-            "Anthropic": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-            "Google": ["gemini-pro", "gemini-pro-vision"],
-            "Cohere": ["command", "command-light"],
-            "Hugging Face": ["mistral-7b", "llama-2-7b", "code-llama"],
-            "Mistral": ["mistral-large", "mistral-medium", "mistral-small"],
-            "Llama": ["llama-2-70b", "llama-2-13b", "llama-2-7b"],
-            "Local": ["local-model"]
+            "OpenAI": [
+                # GPT-5 Series (Latest)
+                "gpt-5", "gpt-5-pro", "gpt-5-mini",
+                # GPT-4 Series
+                "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4",
+                # o Series (Reasoning-Focused)
+                "o3-pro", "o3", "o3-mini", "o4-mini",
+                # GPT-3.5 Series
+                "gpt-3.5-turbo",
+                # Codex Series (Developer-Focused)
+                "codex"
+            ],
+            "Anthropic": [
+                "claude-3.5-sonnet", "claude-3-opus", "claude-3-sonnet", "claude-3-haiku",
+                "claude-2.1", "claude-2.0", "claude-instant"
+            ],
+            "Google": [
+                # Gemini 2.5 Series (Latest)
+                "gemini-2.5-pro-diamond", "gemini-2.5-pro", "gemini-2.5-flash-spark", 
+                "gemini-2.5-flash", "gemini-2.5-flash-lite",
+                # Gemini 2.0 Series
+                "gemini-2.0-pro", "gemini-2.0-flash", "gemini-2.0-flash-lite",
+                # Gemini 1.5 Series
+                "gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-lite",
+                # Gemini 1.0 Series
+                "gemini-1.0-ultra", "gemini-1.0-pro", "gemini-1.0-nano",
+                # Specialized Models
+                "gemini-nano-banana", "gemini-veo-3", "gemini-robotics", "gemini-robotics-er"
+            ],
+            "Groq": [
+                # Production Models
+                "llama-3.1-8b", "llama-3.3-70b", "llama-guard-4-12b",
+                "gpt-oss-20b", "gpt-oss-120b", "whisper-large-v3", "whisper-large-v3-turbo",
+                # Groq-Optimized Systems
+                "compound", "compound-mini",
+                # Tool-Use Models
+                "llama-3-groq-70b-tool-use", "llama-3-groq-8b-tool-use"
+            ],
+            "Cohere": [
+                "command-r-plus", "command-r", "command", "command-light",
+                "command-nightly", "command-light-nightly"
+            ],
+            "Hugging Face": [
+                "mistral-7b", "llama-2-7b", "llama-2-13b", "llama-2-70b",
+                "code-llama", "codellama", "falcon-7b", "falcon-40b",
+                "bloom-560m", "bloom-1b7", "bloom-3b", "bloom-7b1"
+            ],
+            "Mistral": [
+                "mistral-large", "mistral-medium", "mistral-small",
+                "mixtral-8x7b", "mixtral-8x22b", "codestral"
+            ],
+            "Llama": [
+                "llama-3.1-8b", "llama-3.1-70b", "llama-3.1-405b",
+                "llama-3-8b", "llama-3-70b", "llama-3-405b",
+                "llama-2-7b", "llama-2-13b", "llama-2-70b",
+                "llama-2-7b-chat", "llama-2-13b-chat", "llama-2-70b-chat"
+            ],
+            "Local": [
+                "local-model", "ollama-llama3", "ollama-mistral", "ollama-codellama",
+                "local-gpt", "local-claude", "custom-model"
+            ]
         }
         
         return provider in supported_combinations and model in supported_combinations[provider]

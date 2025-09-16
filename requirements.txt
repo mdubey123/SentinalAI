@@ -20,7 +20,9 @@ openai
 anthropic
 google-generativeai
 cohere
+groq
 transformers
+huggingface-hub
 
 # Security and Cryptography
 cryptography

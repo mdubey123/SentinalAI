@@ -24,6 +24,8 @@ services:
       - sentinelai_dev_logs:/app/logs
       - sentinelai_dev_reports:/app/reports
       - sentinelai_dev_cache:/app/cache
+    env_file:
+      - docker.env.example
     environment:
       - PYTHONPATH=/app
       - STREAMLIT_SERVER_PORT=8501
@@ -34,6 +36,19 @@ services:
       - STREAMLIT_SERVER_RUN_ON_SAVE=true
       - STREAMLIT_SERVER_FILE_WATCHER_TYPE=auto
       - PYTHONUNBUFFERED=1
+      # LLM Provider Environment Variables (optional - can be set via UI)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - LLAMA_API_KEY=${LLAMA_API_KEY:-}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      # Development settings
+      - SENTINELAI_ENV=development
+      - LOG_LEVEL=DEBUG
     restart: unless-stopped
     depends_on:
       - clamav-dev

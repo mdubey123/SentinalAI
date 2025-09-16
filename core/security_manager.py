@@ -234,7 +234,12 @@ class SecurityManager:
             'anthropic': lambda k: k.startswith('sk-ant-') and len(k) > 20,
             'virustotal': lambda k: len(k) == 64 and k.isalnum(),
             'google': lambda k: len(k) > 20,
-            'cohere': lambda k: len(k) > 20
+            'groq': lambda k: k.startswith('gsk_') and len(k) > 20,
+            'cohere': lambda k: len(k) > 20,
+            'hugging face': lambda k: k.startswith('hf_') and len(k) > 20,
+            'mistral': lambda k: len(k) > 20,
+            'llama': lambda k: len(k) > 20,
+            'local': lambda k: True  # Local models don't need API keys
         }
         
         validator = validation_rules.get(service.lower())

@@ -1,149 +1,829 @@
-/* Main Theme Colors */
-:root {
-    --primary: #2563eb;       /* Vibrant blue for primary actions */
-    --primary-dark: #1d4ed8;  /* Darker shade for hover states */
-    --secondary: #4b5563;     /* Cool gray for secondary elements */
-    --accent: #7c3aed;        /* Purple accent for highlights */
-    --success: #10b981;       /* Green for success states */
-    --warning: #f59e0b;       /* Amber for warnings */
-    --danger: #ef4444;        /* Red for errors and destructive actions */
-    --background: #f8fafc;    /* Light gray background */
-    --surface: #ffffff;       /* White surface for cards and containers */
-    --text-primary: #1e293b;  /* Dark gray for primary text */
-    --text-secondary: #64748b;/* Medium gray for secondary text */
-    --border: #e2e8f0;        /* Light gray for borders */
-}
+/* ========================================
+   SENTINELAI DUAL-THEME DESIGN SYSTEM
+   Supports both Light and Dark modes
+   ======================================== */
 
-/* Base Styles */
-.stApp {
-    background-color: var(--background);
-    color: var(--text-primary);
+/* ========================================
+   SHARED DESIGN TOKENS
+   These remain consistent across both themes
+   ======================================== */
+:root {
+    /* Gradient Definitions - Work in both themes */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    
+    /* Design Tokens - Consistent across themes */
+    --border-radius: 15px;
+    --border-radius-sm: 8px;
+    --border-radius-lg: 20px;
+    --transition: all 0.3s ease;
+    --transition-fast: all 0.2s ease;
+    
+    /* Typography */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Headers */
-h1, h2, h3, h4, h5, h6 {
-    color: var(--text-primary);
-    font-weight: 600;
-    margin-bottom: 0.75rem;
+/* ========================================
+   DARK THEME VARIABLES
+   Applied by default and when prefers-color-scheme: dark
+   ======================================== */
+:root {
+    /* Dark Theme Background Colors */
+    --bg-primary: #0f0f23;                    /* Deep dark background */
+    --bg-secondary: rgba(255, 255, 255, 0.1); /* Semi-transparent card background */
+    --bg-elevated: rgba(255, 255, 255, 0.15); /* Elevated surface */
+    --bg-sidebar: rgba(0, 0, 0, 0.3);        /* Sidebar background */
+    
+    /* Dark Theme Text Colors */
+    --text-primary: #ffffff;                  /* Primary white text */
+    --text-secondary: #b0b0b0;                /* Secondary gray text */
+    --text-muted: #808080;                   /* Muted text */
+    
+    /* Dark Theme Shadows */
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+    
+    /* Dark Theme Borders */
+    --border-primary: rgba(255, 255, 255, 0.2);
+    --border-secondary: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(102, 126, 234, 0.3);
 }
 
-/* Buttons */
+/* ========================================
+   LIGHT THEME VARIABLES
+   Applied when prefers-color-scheme: light
+   ======================================== */
+@media (prefers-color-scheme: light) {
+:root {
+        /* Light Theme Background Colors */
+        --bg-primary: #f8fafc;                    /* Light gray background */
+        --bg-secondary: rgba(255, 255, 255, 0.8);  /* Semi-transparent white */
+        --bg-elevated: rgba(255, 255, 255, 0.95);  /* Elevated white surface */
+        --bg-sidebar: rgba(255, 255, 255, 0.9);    /* Light sidebar */
+        
+        /* Light Theme Text Colors */
+        --text-primary: #1e293b;                  /* Dark gray for primary text */
+        --text-secondary: #64748b;                 /* Medium gray for secondary text */
+        --text-muted: #94a3b8;                    /* Light gray for muted text */
+        
+        /* Light Theme Shadows */
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.15);
+        
+        /* Light Theme Borders */
+        --border-primary: rgba(0, 0, 0, 0.1);
+        --border-secondary: rgba(0, 0, 0, 0.05);
+        --border-accent: rgba(102, 126, 234, 0.2);
+    }
+}
+
+/* ========================================
+   BASE STYLES - THEME AWARE
+   ======================================== */
+.stApp {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    min-height: 100vh;
+    transition: var(--transition);
+}
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+/* ========================================
+   TYPOGRAPHY - THEME AWARE
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+    background-clip: initial;
+}
+
+/* Gradient accent underline for headers */
+h1::after, h2::after, h3::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--primary-gradient);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+}
+
+p, span, div {
+    color: var(--text-secondary) !important;
+    transition: var(--transition);
+}
+
+/* ========================================
+   AGGRESSIVE TEXT VISIBILITY OVERRIDES
+   Ensures text is always visible regardless of theme
+   ======================================== */
+
+/* Force all text to be visible with maximum specificity */
+.stApp, .stApp *, .stApp *::before, .stApp *::after {
+    color: var(--text-primary) !important;
+}
+
+/* Specific text element overrides */
+.stApp p, .stApp span, .stApp div {
+    color: var(--text-secondary) !important;
+}
+
+.stApp label, .stApp label * {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* Streamlit specific text elements with maximum specificity */
+.stApp [data-testid="stText"],
+.stApp [data-testid="stMarkdown"],
+.stApp [data-testid="stText"] *,
+.stApp [data-testid="stMarkdown"] * {
+    color: var(--text-primary) !important;
+}
+
+.stApp [data-testid="stMarkdown"] p {
+    color: var(--text-secondary) !important;
+}
+
+/* Override Streamlit's default text colors completely */
+.stApp .stText,
+.stApp .stMarkdown,
+.stApp .stText *,
+.stApp .stMarkdown * {
+    color: var(--text-primary) !important;
+}
+
+.stApp .stText p,
+.stApp .stMarkdown p {
+    color: var(--text-secondary) !important;
+}
+
+/* Force visibility for all text in Streamlit components */
+.stApp [class*="st"] {
+    color: var(--text-primary) !important;
+}
+
+.stApp [class*="st"] p,
+.stApp [class*="st"] span,
+.stApp [class*="st"] div {
+    color: var(--text-secondary) !important;
+}
+
+.stApp [class*="st"] label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+/* Specific overrides for form elements */
+.stApp .stTextInput,
+.stApp .stTextArea,
+.stApp .stSelectbox,
+.stApp .stRadio,
+.stApp .stCheckbox {
+    color: var(--text-primary) !important;
+}
+
+.stApp .stTextInput label,
+.stApp .stTextArea label,
+.stApp .stSelectbox label,
+.stApp .stRadio label,
+.stApp .stCheckbox label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+/* Override any inherited colors */
+.stApp * {
+    color: inherit !important;
+}
+
+.stApp p, .stApp span, .stApp div {
+    color: var(--text-secondary) !important;
+}
+
+.stApp label {
+    color: var(--text-secondary) !important;
+}
+
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+    color: var(--text-primary) !important;
+}
+
+/* ========================================
+   BUTTONS - THEME AWARE
+   ======================================== */
 .stButton > button {
-    background-color: var(--primary);
-    color: white;
+    background: var(--primary-gradient);
+    color: var(--text-primary);
     border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.stButton > button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: var(--transition);
 }
 
 .stButton > button:hover {
-    background-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
 }
 
-/* Sidebar */
+.stButton > button:hover::before {
+    left: 100%;
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Button Variants */
+.stButton.secondary > button {
+    background: var(--secondary-gradient);
+}
+
+.stButton.success > button {
+    background: var(--success-gradient);
+}
+
+.stButton.warning > button {
+    background: var(--warning-gradient);
+}
+
+.stButton.danger > button {
+    background: var(--danger-gradient);
+}
+
+/* ========================================
+   SIDEBAR - THEME AWARE
+   ======================================== */
 .css-1d391kg {
-    background-color: var(--surface);
-    border-right: 1px solid var(--border);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-primary);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: var(--transition);
 }
 
-/* Tabs */
+/* ========================================
+   TABS - THEME AWARE
+   ======================================== */
 .stTabs [data-baseweb="tab-list"] {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-primary);
     margin-bottom: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: var(--transition);
 }
 
 .stTabs [data-baseweb="tab"] {
     color: var(--text-secondary);
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1.25rem;
     margin-right: 0.5rem;
-    border-radius: 6px 6px 0 0;
-    transition: all 0.2s ease;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.stTabs [data-baseweb="tab"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary-gradient);
+    opacity: 0;
+    transition: var(--transition);
+    z-index: -1;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.stTabs [data-baseweb="tab"]:hover::before {
+    opacity: 0.1;
 }
 
 .stTabs [aria-selected="true"] {
-    color: var(--primary);
-    background-color: var(--surface);
-    border-bottom: 2px solid var(--primary);
+    color: var(--text-primary);
+    background: var(--primary-gradient);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
-/* Input Fields */
+.stTabs [aria-selected="true"]::before {
+    opacity: 1;
+}
+
+/* ========================================
+   FORM ELEMENTS - THEME AWARE WITH AGGRESSIVE OVERRIDES
+   ======================================== */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
 .stSelectbox > div > div > div {
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    transition: all 0.2s ease;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-primary) !important;
+    border-radius: var(--border-radius-sm) !important;
+    padding: 0.75rem 1rem !important;
+    color: var(--text-primary) !important;
+    transition: var(--transition) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Maximum specificity for form labels */
+.stTextInput label,
+.stTextArea label,
+.stSelectbox label,
+.stTextInput label *,
+.stTextArea label *,
+.stSelectbox label * {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+.stRadio label,
+.stCheckbox label,
+.stRadio label *,
+.stCheckbox label * {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+/* Additional overrides for form containers */
+.stTextInput,
+.stTextArea,
+.stSelectbox,
+.stRadio,
+.stCheckbox {
+    color: var(--text-primary) !important;
+}
+
+.stTextInput *,
+.stTextArea *,
+.stSelectbox *,
+.stRadio *,
+.stCheckbox * {
+    color: inherit !important;
+}
+
+/* Force visibility for all form text */
+.stApp .stTextInput label,
+.stApp .stTextArea label,
+.stApp .stSelectbox label,
+.stApp .stRadio label,
+.stApp .stCheckbox label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+
+.stApp .stRadio label,
+.stApp .stCheckbox label {
+    color: var(--text-primary) !important;
+}
+
+.stTextInput > div > div > input::placeholder,
+.stTextArea > div > div > textarea::placeholder {
+    color: var(--text-muted);
 }
 
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus,
 .stSelectbox > div > div > div:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    border-color: var(--border-accent);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: var(--bg-elevated);
+    outline: none;
 }
 
-/* Cards and Containers */
+.stTextInput > div > div > input:hover,
+.stTextArea > div > div > textarea:hover,
+.stSelectbox > div > div > div:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-elevated);
+}
+
+/* ========================================
+   CARDS AND CONTAINERS - THEME AWARE
+   ======================================== */
 .stAlert, .stDataFrame, .stJson {
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1rem;
-    background-color: var(--surface);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
 }
 
-/* Status Indicators */
+.stAlert::before, .stDataFrame::before, .stJson::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-gradient);
+    opacity: 0.6;
+}
+
+.stAlert:hover, .stDataFrame:hover, .stJson:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-accent);
+}
+
+/* Generic Card Styling */
+.card, .container, .panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: var(--transition);
+}
+
+.card:hover, .container:hover, .panel:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-accent);
+}
+
+/* ========================================
+   STATUS INDICATORS - THEME AWARE
+   ======================================== */
 .stAlert {
-    border-left: 4px solid var(--primary);
+    border-left: 4px solid transparent;
+    background: linear-gradient(90deg, var(--primary-gradient), var(--bg-secondary));
+    background-clip: padding-box;
 }
 
 .stAlert[data-testid="stNotification"] {
-    border-left: 4px solid var(--success);
+    border-left: 4px solid transparent;
+    background: linear-gradient(90deg, var(--success-gradient), var(--bg-secondary));
+    background-clip: padding-box;
 }
 
 .stAlert[data-testid="stError"] {
-    border-left: 4px solid var(--danger);
+    border-left: 4px solid transparent;
+    background: linear-gradient(90deg, var(--danger-gradient), var(--bg-secondary));
+    background-clip: padding-box;
+}
+
+.stAlert[data-testid="stWarning"] {
+    border-left: 4px solid transparent;
+    background: linear-gradient(90deg, var(--warning-gradient), var(--bg-secondary));
+    background-clip: padding-box;
 }
 
 /* Progress Bar */
 .stProgress > div > div > div > div {
-    background-color: var(--primary);
+    background: var(--primary-gradient);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Radio Buttons and Checkboxes */
+.stProgress > div {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-primary);
+    overflow: hidden;
+}
+
+/* Status Badge Styling */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+    background: var(--success-gradient);
+    color: var(--text-primary);
+}
+
+.status-badge.warning {
+    background: var(--warning-gradient);
+    color: var(--text-primary);
+}
+
+.status-badge.danger {
+    background: var(--danger-gradient);
+    color: var(--text-primary);
+}
+
+.status-badge.info {
+    background: var(--primary-gradient);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   FORM CONTROLS - THEME AWARE
+   ======================================== */
+.stRadio > div > label,
+.stCheckbox > label {
+    color: var(--text-secondary);
+    transition: var(--transition);
+}
+
+.stRadio > div > label:hover,
+.stCheckbox > label:hover {
+    color: var(--text-primary);
+}
+
 .stRadio > div > label > div:first-child,
 .stCheckbox > label > div:first-child {
-    margin-right: 0.5rem;
+    margin-right: 0.75rem;
+    border: 2px solid var(--border-primary);
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
 }
 
-/* Custom Scrollbar */
+.stRadio > div > label > div:first-child:hover,
+.stCheckbox > label > div:first-child:hover {
+    border-color: var(--border-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   SCROLLBARS - THEME AWARE
+   ======================================== */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--background);
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-sm);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
+    background: var(--primary-gradient);
+    border-radius: var(--border-radius-sm);
+    border: 2px solid var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary);
+    background: var(--secondary-gradient);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Responsive Adjustments */
+::-webkit-scrollbar-corner {
+    background: var(--bg-primary);
+}
+
+/* ========================================
+   ADDITIONAL COMPONENTS - THEME AWARE
+   ======================================== */
+
+/* Loading Spinner */
+.spinner {
+    border: 3px solid var(--border-primary);
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    background: var(--primary-gradient);
+    background-clip: padding-box;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltip Styling */
+.tooltip {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Modal and Overlay */
+.modal-overlay {
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
 @media (max-width: 768px) {
     .stTabs [data-baseweb="tab"] {
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
     }
+    
+    .stButton > button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .card, .container, .panel {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    :root {
+        --border-radius: 12px;
+        --border-radius-sm: 6px;
+        --border-radius-lg: 16px;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-primary: rgba(255, 255, 255, 0.4);
+        --border-secondary: rgba(255, 255, 255, 0.3);
+        --text-secondary: #d0d0d0;
+    }
+    
+    @media (prefers-color-scheme: light) {
+        :root {
+            --border-primary: rgba(0, 0, 0, 0.3);
+            --border-secondary: rgba(0, 0, 0, 0.2);
+            --text-secondary: #374151;
+        }
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ========================================
+   THEME TRANSITION ENHANCEMENTS
+   ======================================== */
+
+/* Smooth transitions when switching themes */
+* {
+    transition: background-color var(--transition), 
+                color var(--transition), 
+                border-color var(--transition),
+                box-shadow var(--transition);
+}
+
+/* Ensure theme switching is smooth */
+.stApp, body, .css-1d391kg, .stTabs [data-baseweb="tab-list"],
+.stAlert, .stDataFrame, .stJson, .card, .container, .panel {
+    transition: background-color var(--transition), 
+                color var(--transition), 
+                border-color var(--transition),
+                box-shadow var(--transition);
+}
+
+/* ========================================
+   FINAL TEXT VISIBILITY OVERRIDES
+   Maximum specificity to ensure all text is visible
+   ======================================== */
+
+/* Nuclear option: Force all text to be visible */
+.stApp * {
+    color: var(--text-primary) !important;
+}
+
+.stApp p, .stApp span, .stApp div {
+    color: var(--text-secondary) !important;
+}
+
+.stApp label, .stApp label * {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* Override any Streamlit default styles */
+.stApp [class*="st"] * {
+    color: var(--text-primary) !important;
+}
+
+.stApp [class*="st"] p,
+.stApp [class*="st"] span,
+.stApp [class*="st"] div {
+    color: var(--text-secondary) !important;
+}
+
+.stApp [class*="st"] label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+/* Specific overrides for problematic elements */
+.stApp .stTextInput label,
+.stApp .stTextArea label,
+.stApp .stSelectbox label,
+.stApp .stRadio label,
+.stApp .stCheckbox label {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    background: none !important;
+}
+
+.stApp .stRadio label,
+.stApp .stCheckbox label {
+    color: var(--text-primary) !important;
+}
+
+/* Force input text visibility */
+.stApp input, .stApp textarea, .stApp select {
+    color: var(--text-primary) !important;
+    background: var(--bg-secondary) !important;
+}
+
+/* Override any inherited opacity or visibility issues */
+.stApp * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Ensure text shadows don't interfere */
+.stApp *, .stApp *::before, .stApp *::after {
+    text-shadow: none !important;
 }
