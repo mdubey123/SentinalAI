@@ -1293,11 +1293,32 @@ def load_custom_css():
         border-right: 1px solid var(--border) !important;
         backdrop-filter: blur(20px) !important;
         box-shadow: 2px 0 20px var(--shadow-glass) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }
     
     section[data-testid="stSidebar"] > div:first-child {
         background: var(--surface) !important;
         backdrop-filter: blur(20px) !important;
+        padding: 1rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Fix sidebar content container */
+    .stSidebar .stMarkdown,
+    .stSidebar .stSelectbox,
+    .stSidebar .stTextInput,
+    .stSidebar .stRadio,
+    .stSidebar .stCheckbox,
+    .stSidebar .stColumns {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        box-sizing: border-box !important;
     }
 
     /* Sidebar header */
@@ -1746,8 +1767,17 @@ def load_custom_css():
         min-width: 300px !important;
         width: 300px !important;
         max-width: 300px !important;
-        padding: 1rem !important;
+        padding: 0 !important;
         overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Sidebar content container */
+    .stSidebar > div:first-child {
+        padding: 1rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
     }
     
     .stSidebar .stSelectbox, .stSidebar .stTextInput {
@@ -1757,23 +1787,30 @@ def load_custom_css():
         max-width: 100% !important;
         clear: both !important;
         display: block !important;
+        box-sizing: border-box !important;
     }
     
     /* Prevent overlapping with sidebar elements */
     .stSidebar > div {
         margin-bottom: 1rem !important;
         padding-bottom: 0.5rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar h4, .stSidebar h5, .stSidebar h6 {
         margin-top: 1rem !important;
         margin-bottom: 0.5rem !important;
         clear: both !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .stSidebar .stMarkdown {
         margin-bottom: 1rem !important;
         clear: both !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Sidebar Title Styling - Match Theme Combinations */
@@ -1838,10 +1875,16 @@ def load_custom_css():
         border: 1px solid var(--border) !important;
         border-radius: var(--radius-md) !important;
         box-shadow: var(--shadow-card) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .stSidebar .stColumns > div {
         margin-bottom: 0.5rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Theme toggle selectbox styling */
@@ -1890,6 +1933,9 @@ def load_custom_css():
         border: 1px solid var(--border) !important;
         border-radius: var(--radius-md) !important;
         box-shadow: var(--shadow-card) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Navigation radio buttons styling */
@@ -1943,6 +1989,9 @@ def load_custom_css():
         border-radius: var(--radius-md) !important;
         box-shadow: var(--shadow-card) !important;
         margin-bottom: 0.5rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* AI Configuration section label styling */
@@ -1961,13 +2010,14 @@ def load_custom_css():
         text-overflow: ellipsis !important;
         min-width: 100% !important;
         width: 100% !important;
-        max-width: none !important;
+        max-width: 100% !important;
         padding: 0.5rem 2rem 0.5rem 0.75rem !important;
         font-size: 0.875rem !important;
         line-height: 1.4 !important;
         margin-bottom: 0.5rem !important;
         position: relative !important;
         z-index: 5 !important;
+        box-sizing: border-box !important;
     }
     
     /* Ensure selectbox container has proper spacing */
@@ -1975,6 +2025,9 @@ def load_custom_css():
         margin-bottom: 1rem !important;
         position: relative !important;
         z-index: 5 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Fix selectbox label spacing */
@@ -2013,13 +2066,14 @@ def load_custom_css():
         text-overflow: ellipsis !important;
         width: 100% !important;
         min-width: 100% !important;
-        max-width: none !important;
+        max-width: 100% !important;
         font-size: 0.875rem !important;
         line-height: 1.4 !important;
         padding: 0.5rem 0.75rem !important;
         margin-bottom: 0.5rem !important;
         position: relative !important;
         z-index: 5 !important;
+        box-sizing: border-box !important;
     }
     
     /* Ensure text input container has proper spacing */
@@ -2027,6 +2081,9 @@ def load_custom_css():
         margin-bottom: 1rem !important;
         position: relative !important;
         z-index: 5 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     /* Fix text input label spacing */
@@ -2985,6 +3042,74 @@ def load_custom_css():
             padding: 0.5rem 0.75rem !important;
             font-size: 0.9rem !important;
         }
+        
+        /* Stack columns on small screens */
+        .stColumns {
+            display: block !important;
+        }
+        .stColumns > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            margin-bottom: 0.75rem !important;
+        }
+        
+        /* Ensure main container spans full width */
+        .main .block-container {
+            max-width: 100% !important;
+        }
+        
+        /* Improve sidebar behavior on mobile */
+        [data-testid="stSidebar"] {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.3s ease !important;
+            z-index: 1000 !important;
+        }
+        
+        /* When toggled open via inline CSS, keep visible */
+        [data-testid="stSidebar"][style*="margin-left: 0"] {
+            transform: translateX(0) !important;
+        }
+    }
+
+    /* Make tab list horizontally scrollable and avoid wrapping */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 0.25rem !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+    }
+
+    /* Ensure media and tables fit container width */
+    img, svg, canvas, video {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    .stDataFrame, .stDataFrame > div, .stDataFrame table {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .stDataFrame {
+        overflow-x: auto !important;
+    }
+    
+    /* Prevent overflow for code blocks on small screens */
+    pre, code, .stCode code, .stCode pre {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
     }
     </style>
     """

@@ -296,6 +296,28 @@ p, span, div {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     transition: var(--transition);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Fix sidebar content overflow */
+.css-1d391kg > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 1rem !important;
+}
+
+.css-1d391kg .stMarkdown,
+.css-1d391kg .stSelectbox,
+.css-1d391kg .stTextInput,
+.css-1d391kg .stRadio,
+.css-1d391kg .stCheckbox {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* ========================================
@@ -699,6 +721,46 @@ p, span, div {
         --border-radius-sm: 6px;
         --border-radius-lg: 16px;
     }
+    
+    /* Stack Streamlit columns */
+    .stColumns { display: block !important; }
+    .stColumns > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Allow main container to fit small screens */
+    .main .block-container { max-width: 100% !important; }
+}
+
+/* Make tab list horizontally scrollable */
+.stTabs [data-baseweb="tab-list"] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    display: flex;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.25rem;
+}
+.stTabs [data-baseweb="tab"] {
+    flex: 0 0 auto;
+    min-width: max-content;
+}
+
+/* Ensure media and tables fit width */
+img, svg, canvas, video { max-width: 100%; height: auto; }
+.stDataFrame, .stDataFrame > div, .stDataFrame table { width: 100%; max-width: 100%; }
+.stDataFrame { overflow-x: auto; }
+
+/* Wrap long code lines */
+pre, code, .stCode code, .stCode pre {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* ========================================
