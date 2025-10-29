@@ -55,52 +55,7 @@ st.set_page_config(
     }
 )
 
-# Sidebar collapse state and toggle UI
-if 'sidebar_collapsed' not in st.session_state:
-    st.session_state.sidebar_collapsed = False
-
-def apply_sidebar_toggle_css():
-    if st.session_state.sidebar_collapsed:
-        st.markdown(
-            """
-            <style>
-            /* Collapse the sidebar off-canvas */
-            [data-testid="stSidebar"] {
-                margin-left: -320px !important;
-                width: 0 !important;
-                min-width: 0 !important;
-                max-width: 0 !important;
-                opacity: 0 !important;
-            }
-            /* Ensure main content fills the space */
-            [data-testid="stAppViewContainer"] {
-                margin-left: 0 !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            """
-            <style>
-            [data-testid="stSidebar"] {
-                margin-left: 0 !important;
-                opacity: 1 !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-# Top toolbar with sidebar toggle button
-_top_c1, _top_c2 = st.columns([12, 1])
-with _top_c2:
-    if st.button("☰", help="Toggle sidebar", use_container_width=True):
-        st.session_state.sidebar_collapsed = not st.session_state.sidebar_collapsed
-        st.experimental_rerun()
-
-apply_sidebar_toggle_css()
+# Dark theme is now the default - no toggle needed
 
 # Initialize logging
 logger = setup_logger()
@@ -210,110 +165,44 @@ def optimize_scan_performance(scan_type: str, target: str) -> Dict:
 # THEME MANAGEMENT SYSTEM
 # ========================================
 
-def initialize_theme_state():
-    """Initialize session state variables for theme management."""
-    if 'theme' not in st.session_state:
-        st.session_state.theme = 'auto'  # auto, light, dark
-    if 'theme_toggle_animation' not in st.session_state:
-        st.session_state.theme_toggle_animation = False
 
-def apply_theme(theme: str):
+def create_sidebar_config():
     """
-    Apply the selected theme to the app.
+    Create the sidebar configuration section with LLM settings.
+    """
+    st.sidebar.markdown("### 🤖 AI Configuration")
     
-    Args:
-        theme: The theme to apply ('auto', 'light', 'dark')
-    """
-    if theme == 'light':
-        st.markdown('<div class="theme-light">', unsafe_allow_html=True)
-    elif theme == 'dark':
-        st.markdown('<div class="theme-dark">', unsafe_allow_html=True)
-    else:  # auto
-        st.markdown('<div class="theme-auto">', unsafe_allow_html=True)
-
-def show_theme_toast(message: str, type: str = "info"):
-    """
-    Show a toast notification for theme changes.
+    # LLM Provider dropdown
+    llm_provider = st.sidebar.selectbox(
+        "LLM Provider:",
+        options=["OpenAI", "Llama", "Gemini", "Claude", "Custom"],
+        index=0,
+        key="llm_provider"
+    )
     
-    Args:
-        message: The message to display
-        type: The type of toast ('success', 'info', 'warning', 'error')
-    """
-    toast_html = f"""
-    <div class="toast {type}">
-        <strong>{message}</strong>
-    </div>
-    <script>
-        setTimeout(() => {{
-            const toast = document.querySelector('.toast');
-            if (toast) {{
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 300);
-            }}
-        }}, 3000);
-    </script>
-    """
-    st.markdown(toast_html, unsafe_allow_html=True)
-
-def create_theme_toggle():
-    """
-    Create a theme toggle section in the sidebar.
-    This function handles the theme switching logic and UI.
-    """
-    st.sidebar.markdown("### 🎨 Theme Settings")
-    
-    # Theme selection
-    theme_options = {
-        "🌓 Auto": "auto",
-        "☀️ Light": "light", 
-        "🌙 Dark": "dark"
+    # Model selection based on provider
+    model_options = {
+        "OpenAI": ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+        "Llama": ["llama-3.1-8b", "llama-3.1-70b", "llama-3.2-3b"],
+        "Gemini": ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"],
+        "Claude": ["claude-3-5-sonnet", "claude-3-5-haiku", "claude-3-opus"],
+        "Custom": ["custom-model"]
     }
     
-    current_theme = st.session_state.theme
-    current_label = next(key for key, value in theme_options.items() if value == current_theme)
+    selected_model = st.sidebar.selectbox(
+        "Model:",
+        options=model_options.get(llm_provider, ["default"]),
+        index=0,
+        key="llm_model"
+    )
     
-    # Create theme toggle
-    col1, col2 = st.sidebar.columns([3, 1])
-    
-    with col1:
-        selected_theme = st.selectbox(
-            "Choose Theme:",
-            options=list(theme_options.keys()),
-            index=list(theme_options.keys()).index(current_label),
-            key="theme_selector"
-        )
-    
-    with col2:
-        if st.button("🔄", help="Refresh theme", key="theme_refresh"):
-            st.session_state.theme_toggle_animation = True
-            st.rerun()
-    
-    # Update theme if changed
-    new_theme = theme_options[selected_theme]
-    if new_theme != current_theme:
-        st.session_state.theme = new_theme
-        st.session_state.theme_toggle_animation = True
-        
-        # Show toast notification
-        theme_messages = {
-            "auto": "Theme set to Auto (follows system preference)",
-            "light": "Theme switched to Light mode",
-            "dark": "Theme switched to Dark mode"
-        }
-        show_theme_toast(theme_messages[new_theme], "success")
-        st.rerun()
-    
-    # Display current theme info
-    st.sidebar.markdown(f"**Current:** {current_label}")
-    
-    # Theme preview
-    st.sidebar.markdown("### Preview")
-    with st.sidebar.container():
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
-        st.markdown("**Sample Card**")
-        st.markdown("This is how your content will look with the current theme.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # API Key input (masked)
+    api_key = st.sidebar.text_input(
+        f"{llm_provider} API Key:",
+        type="password",
+        key="llm_api_key",
+        help="Enter your API key for the selected provider"
+    )
 
 # ========================================
 # HOME PAGE ENHANCEMENT
@@ -643,271 +532,501 @@ def create_footer():
     """, unsafe_allow_html=True)
 
 def load_custom_css():
-    """Load custom CSS with enhanced modern UI/UX and theme system"""
+    """Load custom CSS with professional enterprise-grade dark theme"""
     custom_css = """
     <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
     /* ========================================
-       MODERN THEME SYSTEM
+       ENTERPRISE DARK THEME - GLOBAL OVERRIDE
        ======================================== */
     
-    /* Design Tokens - Consistent across themes */
-    :root {
-        /* Border Radius */
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --radius-xl: 20px;
-        --radius-full: 9999px;
-        
-        /* Animation Variables */
-        --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        
-        /* Gradients */
-        --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-        --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-        --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-        --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-        --gradient-info: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
-        --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    /* Dark theme is the default - no toggle needed */
+    
+    /* ===== Enhanced Fixed Sidebar ===== */
+    [data-testid="stSidebar"] {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        width: 20rem !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        background: linear-gradient(180deg, #0a0f1a 0%, #111827 100%) !important;
+        border-right: 2px solid #1f2937 !important;
+        z-index: 10 !important;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.4) !important;
+        padding: 1.5rem 1rem !important;
+    }
+    
+    /* ===== Main Content Layout Fix ===== */
+    [data-testid="stAppViewContainer"] {
+        margin-left: 20rem !important;
+        background: radial-gradient(circle at 10% 20%, #0f172a, #020617) !important;
+        min-height: 100vh !important;
+    }
+    
+    .main .block-container {
+        padding: 2rem 3rem !important;
+        max-width: none !important;
+        margin: 0 !important;
+        background: transparent !important;
+    }
+    
+    /* Remove unwanted borders and lines */
+    hr, .stVerticalBlockBorder, .stHorizontalBlockBorder {
+        display: none !important;
+    }
+    
+    /* Ensure dark theme is always applied */
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        background-color: #0d1117 !important;
+        color: #e6edf3 !important;
     }
     
     /* ========================================
-       LIGHT THEME (Default)
+       ENTERPRISE DARK THEME VARIABLES
        ======================================== */
+    
     :root {
-        /* Light Theme Colors */
-        --primary: #1e293b;
-        --primary-dark: #0f172a;
-        --primary-light: #475569;
-        --secondary: #64748b;
-        --accent: #3b82f6;
-        --accent-dark: #2563eb;
-        --accent-light: #60a5fa;
-        --success: #10b981;
-        --success-light: #34d399;
-        --warning: #f59e0b;
-        --warning-light: #fbbf24;
-        --danger: #ef4444;
-        --danger-light: #f87171;
-        --info: #06b6d4;
-        --info-light: #22d3ee;
+        /* Enterprise Dark Color Palette */
+        --bg-primary: #0d1117;
+        --bg-secondary: #161b22;
+        --bg-tertiary: #21262d;
+        --bg-elevated: #30363d;
         
-        /* Light Theme Backgrounds */
-        --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        --surface: rgba(255, 255, 255, 0.95);
-        --surface-elevated: rgba(255, 255, 255, 0.98);
-        --surface-glass: rgba(255, 255, 255, 0.1);
-        --card-bg: rgba(255, 255, 255, 0.9);
+        --text-primary: #e6edf3;
+        --text-secondary: #8b949e;
+        --text-muted: #6e7681;
         
-        /* Light Theme Text */
-        --text-primary: #0f172a;
-        --text-secondary: #64748b;
-        --text-muted: #94a3b8;
-        --text-inverse: #ffffff;
+        --border-primary: rgba(255, 255, 255, 0.08);
+        --border-secondary: rgba(255, 255, 255, 0.05);
+        --border-accent: #238636;
         
-        /* Light Theme Borders & Shadows */
-        --border: rgba(226, 232, 240, 0.6);
-        --border-light: rgba(241, 245, 249, 0.8);
-        --shadow: rgba(15, 23, 42, 0.1);
-        --shadow-hover: rgba(15, 23, 42, 0.15);
-        --shadow-glass: rgba(15, 23, 42, 0.05);
-        --shadow-card: rgba(15, 23, 42, 0.08);
+        --accent-primary: #238636;
+        --accent-hover: #2ea043;
+        --accent-light: #3fb950;
+        
+        --success: #3fb950;
+        --warning: #d29922;
+        --danger: #f85149;
+        --info: #58a6ff;
+        
+        /* Design Tokens */
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+        
+        --transition-fast: 0.15s ease;
+        --transition-normal: 0.25s ease;
+        --transition-slow: 0.35s ease;
+        
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
     
     /* ========================================
-       DARK THEME
+       SIDEBAR STYLING
        ======================================== */
-    @media (prefers-color-scheme: dark) {
-        :root {
-        --primary: #f1f5f9;
-        --primary-dark: #e2e8f0;
-        --primary-light: #cbd5e1;
-        --secondary: #94a3b8;
-        --accent: #60a5fa;
-        --accent-dark: #3b82f6;
-        --accent-light: #93c5fd;
-        --success: #34d399;
-        --success-light: #6ee7b7;
-        --warning: #fbbf24;
-        --warning-light: #fcd34d;
-        --danger: #f87171;
-        --danger-light: #fca5a5;
-        --info: #22d3ee;
-        --info-light: #67e8f9;
+    
+    /* ===== Sidebar Container ===== */
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 0 !important;
+        height: 100% !important;
+        background: transparent !important;
+    }
+    
+    /* ===== Sidebar Title Styling ===== */
+    .stSidebar h1 {
+        color: #93c5fd !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 1rem !important;
+        text-align: center !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        text-shadow: 0 0 10px rgba(147, 197, 253, 0.3) !important;
+        border-bottom: 2px solid #1f2937 !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    .stSidebar h2, .stSidebar h3 {
+        color: #60a5fa !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        margin: 2rem 0 1rem 0 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        border-left: 3px solid #2563eb !important;
+        padding-left: 0.75rem !important;
+        text-shadow: 0 0 8px rgba(96, 165, 250, 0.2) !important;
+    }
+    
+    /* ===== Sidebar Sections Spacing ===== */
+    .stSidebar .stMarkdown,
+    .stSidebar .stSelectbox,
+    .stSidebar .stTextInput,
+    .stSidebar .stRadio,
+    .stSidebar .stCheckbox,
+    .stSidebar .stExpander {
+        margin-bottom: 1.5rem !important;
+        width: 100% !important;
+    }
+    
+    /* ========================================
+       FORM ELEMENTS - ENTERPRISE STYLING
+       ======================================== */
+    
+    /* Select boxes */
+    .stSelectbox > div > div > div {
+        background-color: var(--bg-secondary) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.875rem !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .stSelectbox > div > div > div:hover {
+        border-color: var(--accent-primary) !important;
+        background-color: var(--bg-tertiary) !important;
+    }
+    
+    .stSelectbox > div > div > div:focus {
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Text inputs */
+    .stTextInput > div > div > input,
+    .stPasswordInput > div > div > input {
+        background-color: var(--bg-secondary) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.875rem !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .stTextInput > div > div > input:hover,
+    .stPasswordInput > div > div > input:hover {
+        border-color: var(--accent-primary) !important;
+        background-color: var(--bg-tertiary) !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stPasswordInput > div > div > input:focus {
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Labels */
+    .stSelectbox label,
+    .stTextInput label,
+    .stPasswordInput label {
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* ===== Enhanced Radio Button Styling ===== */
+    .stRadio > div {
+        background: rgba(15, 23, 42, 0.3) !important;
+        border: 1px solid #1f2937 !important;
+        border-radius: 12px !important;
+        padding: 1rem !important;
+        transition: all 0.3s ease !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    .stRadio > div:hover {
+        border-color: #2563eb !important;
+        background: rgba(37, 99, 235, 0.1) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+    }
+    
+    /* ===== Radio Button Label Alignment Fix ===== */
+    .stRadio label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.6rem !important;
+        color: #e5e7eb !important;
+        font-weight: 500 !important;
+        font-size: 1rem !important;
+        padding: 0.5rem 0.8rem !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+    }
+    
+    .stRadio label:hover {
+        background: rgba(59, 130, 246, 0.2) !important;
+        transform: translateX(4px) !important;
+        color: #93c5fd !important;
+    }
+    
+    /* ===== Radio Button Icon Alignment ===== */
+    .stRadio label > div:first-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    /* ===== Active Selection Highlight ===== */
+    .stRadio [role="radio"][aria-checked="true"] {
+        background: linear-gradient(90deg, #2563eb, #1e3a8a) !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 12px rgba(37, 99, 235, 0.6) !important;
+    }
+    
+    .stRadio [role="radio"][aria-checked="true"] + label {
+        background: linear-gradient(90deg, #2563eb, #1e3a8a) !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 0 12px rgba(37, 99, 235, 0.6) !important;
+    }
+    
+    /* ========================================
+       BUTTONS - ENTERPRISE STYLING
+       ======================================== */
+    
+    /* Primary buttons */
+    .stButton > button,
+    button {
+        background-color: var(--accent-primary) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        transition: var(--transition-normal) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+
+    .stButton > button:hover,
+    button:hover {
+        background-color: var(--accent-hover) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: var(--shadow-md) !important;
+    }
+    
+    .stButton > button:active,
+    button:active {
+        transform: translateY(0) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+    
+    /* ========================================
+       CARDS AND CONTAINERS
+       ======================================== */
+    
+    .card, .modern-card {
+        background-color: var(--bg-secondary) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: var(--shadow-md) !important;
+        transition: var(--transition-normal) !important;
+    }
+    
+    .card:hover, .modern-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: var(--shadow-lg) !important;
+        border-color: var(--accent-primary) !important;
+    }
+    
+    /* ========================================
+       ENHANCED TYPOGRAPHY & VISUAL HIERARCHY
+       ======================================== */
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #60a5fa !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+        text-shadow: 0 0 10px rgba(96, 165, 250, 0.3) !important;
+    }
+    
+    h1 {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(135deg, #60a5fa, #93c5fd) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+    
+    h2 {
+        font-size: 2rem !important;
+        font-weight: 600 !important;
+        color: #93c5fd !important;
+    }
+    
+    h3 {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        color: #93c5fd !important;
+    }
+    
+    p, span, div {
+        color: #d1d5db !important;
+        font-size: 1rem !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* ===== Main Content Text Enhancement ===== */
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3 {
+        color: #60a5fa !important;
+        text-shadow: 0 0 10px rgba(96, 165, 250, 0.3) !important;
+    }
+    
+    .main .block-container p,
+    .main .block-container span,
+    .main .block-container div {
+        color: #f9fafb !important;
+    }
+    
+    /* ========================================
+       RESPONSIVE DESIGN
+       ======================================== */
+    
+    /* ===== Custom Scrollbar Styling ===== */
+    ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px !important;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #1f2937 !important;
+        border-radius: 10px !important;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #2563eb, #1e3a8a) !important;
+        border-radius: 10px !important;
+        transition: background 0.3s ease !important;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+    }
+    
+    /* ===== Responsive Design ===== */
+    @media (max-width: 768px) {
+        /* Mobile sidebar */
+        [data-testid="stSidebar"] {
+            width: 18rem !important;
+        }
         
-        /* Dark Theme Backgrounds */
-        --background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        --surface: rgba(30, 41, 59, 0.95);
-        --surface-elevated: rgba(30, 41, 59, 0.98);
-        --surface-glass: rgba(30, 41, 59, 0.1);
-        --card-bg: rgba(30, 41, 59, 0.9);
+        [data-testid="stAppViewContainer"] {
+            margin-left: 18rem !important;
+        }
         
-        /* Dark Theme Text */
-        --text-primary: #f1f5f9;
-        --text-secondary: #cbd5e1;
-        --text-muted: #94a3b8;
-        --text-inverse: #0f172a;
+        .main .block-container {
+            padding: 1.5rem 2rem !important;
+        }
         
-        /* Dark Theme Borders & Shadows */
-        --border: rgba(71, 85, 105, 0.3);
-        --border-light: rgba(71, 85, 105, 0.2);
-        --shadow: rgba(0, 0, 0, 0.3);
-        --shadow-hover: rgba(0, 0, 0, 0.4);
-        --shadow-glass: rgba(0, 0, 0, 0.1);
-        --shadow-card: rgba(0, 0, 0, 0.2);
+        /* Stack columns on mobile */
+        .stColumns {
+            display: block !important;
+        }
+        
+        .stColumns > div {
+            width: 100% !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        /* Adjust typography for mobile */
+        h1 {
+            font-size: 2rem !important;
+        }
+        
+        h2 {
+            font-size: 1.5rem !important;
+        }
+        
+        h3 {
+            font-size: 1.25rem !important;
         }
     }
     
+    @media (max-width: 480px) {
+        /* Very small screens */
+        [data-testid="stSidebar"] {
+            width: 16rem !important;
+        }
+        
+        [data-testid="stAppViewContainer"] {
+            margin-left: 16rem !important;
+        }
+        
+        .main .block-container {
+            padding: 1rem 1.5rem !important;
+        }
+        
+        .stSidebar h1 {
+            font-size: 1.25rem !important;
+        }
+        
+        .stSidebar h2, .stSidebar h3 {
+            font-size: 0.875rem !important;
+        }
+    }
+
     /* ========================================
-       MANUAL THEME OVERRIDES
+       FINAL OVERRIDES
        ======================================== */
     
-    /* Force Light Theme */
-    .theme-light {
-        --primary: #1e293b !important;
-        --primary-dark: #0f172a !important;
-        --primary-light: #475569 !important;
-        --secondary: #64748b !important;
-        --accent: #3b82f6 !important;
-        --accent-dark: #2563eb !important;
-        --accent-light: #60a5fa !important;
-        --success: #10b981 !important;
-        --success-light: #34d399 !important;
-        --warning: #f59e0b !important;
-        --warning-light: #fbbf24 !important;
-        --danger: #ef4444 !important;
-        --danger-light: #f87171 !important;
-        --info: #06b6d4 !important;
-        --info-light: #22d3ee !important;
-        --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
-        --surface: rgba(255, 255, 255, 0.95) !important;
-        --surface-elevated: rgba(255, 255, 255, 0.98) !important;
-        --surface-glass: rgba(255, 255, 255, 0.1) !important;
-        --card-bg: rgba(255, 255, 255, 0.9) !important;
-        --text-primary: #0f172a !important;
-        --text-secondary: #64748b !important;
-        --text-muted: #94a3b8 !important;
-        --text-inverse: #ffffff !important;
-        --border: rgba(226, 232, 240, 0.6) !important;
-        --border-light: rgba(241, 245, 249, 0.8) !important;
-        --shadow: rgba(15, 23, 42, 0.1) !important;
-        --shadow-hover: rgba(15, 23, 42, 0.15) !important;
-        --shadow-glass: rgba(15, 23, 42, 0.05) !important;
-        --shadow-card: rgba(15, 23, 42, 0.08) !important;
-    }
-    
-    /* Force Dark Theme */
-    .theme-dark {
-        --primary: #f1f5f9 !important;
-        --primary-dark: #e2e8f0 !important;
-        --primary-light: #cbd5e1 !important;
-        --secondary: #94a3b8 !important;
-        --accent: #60a5fa !important;
-        --accent-dark: #3b82f6 !important;
-        --accent-light: #93c5fd !important;
-        --success: #34d399 !important;
-        --success-light: #6ee7b7 !important;
-        --warning: #fbbf24 !important;
-        --warning-light: #fcd34d !important;
-        --danger: #f87171 !important;
-        --danger-light: #fca5a5 !important;
-        --info: #22d3ee !important;
-        --info-light: #67e8f9 !important;
-        --background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-        --surface: rgba(30, 41, 59, 0.95) !important;
-        --surface-elevated: rgba(30, 41, 59, 0.98) !important;
-        --surface-glass: rgba(30, 41, 59, 0.1) !important;
-        --card-bg: rgba(30, 41, 59, 0.9) !important;
-        --text-primary: #f1f5f9 !important;
-        --text-secondary: #cbd5e1 !important;
-        --text-muted: #94a3b8 !important;
-        --text-inverse: #0f172a !important;
-        --border: rgba(71, 85, 105, 0.3) !important;
-        --border-light: rgba(71, 85, 105, 0.2) !important;
-        --shadow: rgba(0, 0, 0, 0.3) !important;
-        --shadow-hover: rgba(0, 0, 0, 0.4) !important;
-        --shadow-glass: rgba(0, 0, 0, 0.1) !important;
-        --shadow-card: rgba(0, 0, 0, 0.2) !important;
-    }
-
-    /* Base Styles */
-    body, .stApp {
-        background: var(--background) !important;
-        color: var(--text-primary) !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        min-height: 100vh !important;
-        line-height: 1.6 !important;
-        font-size: 14px !important;
-    }
-    
-    /* Fix text display issues globally */
+    /* Ensure all text is visible */
     * {
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
+        color: inherit !important;
     }
     
-    /* Specific fixes for form elements */
-    input, textarea, select {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: none !important;
+    /* Remove any remaining borders */
+    .stVerticalBlockBorder,
+    .stHorizontalBlockBorder,
+    .stVerticalBlockBorder > div {
+        display: none !important;
     }
     
-    /* Fix text in buttons */
-    button {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
-        max-width: none !important;
-        border-radius: var(--radius-md) !important;
-        border: 1px solid var(--border) !important;
-        background: var(--card-bg) !important;
-        color: var(--text-primary) !important;
-        transition: var(--transition-normal) !important;
-    }
-
-    button:hover {
-        background: var(--surface-elevated) !important;
-        border-color: var(--accent) !important;
-        transform: translateY(-1px) !important;
-        box-shadow: var(--shadow-card) !important;
-    }
-
-    .stButton>button {
-        width: 100% !important;
-        padding: 0.6rem 0.9rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.2px !important;
+    /* Ensure proper scrolling */
+    [data-testid="stSidebar"] {
+        scrollbar-width: thin !important;
+        scrollbar-color: var(--accent-primary) var(--bg-secondary) !important;
     }
     
-    /* Fix text in labels */
-    label {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
-        max-width: none !important;
-        width: 100% !important;
-        display: block !important;
+    [data-testid="stSidebar"]::-webkit-scrollbar {
+        width: 6px !important;
     }
     
-    /* Fix text in paragraphs and spans */
-    p, span, div {
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
-        word-wrap: break-word !important;
-        word-break: break-word !important;
+    [data-testid="stSidebar"]::-webkit-scrollbar-track {
+        background: var(--bg-secondary) !important;
     }
+    
+    [data-testid="stSidebar"]::-webkit-scrollbar-thumb {
+        background: var(--accent-primary) !important;
+        border-radius: 3px !important;
+    }
+    
+    [data-testid="stSidebar"]::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-hover) !important;
+    }
+    
 
     /* Add animated pattern overlay */
     .stApp::before {
@@ -3224,8 +3343,7 @@ class SentinelAIApp:
         st.sidebar.title("🛡️ SentinelAI v2")
         st.sidebar.markdown("*Precision Cybersecurity Analysis*")
         
-        # Add theme toggle at the top
-        create_theme_toggle()
+        # Dark theme is default; theme toggle removed
         
         # Navigation (expander + clearer grouping)
         with st.sidebar.expander("🧭 Navigation", expanded=True):
@@ -5282,14 +5400,11 @@ def hello_world():
 
 def main():
     """Application entry point"""
-    # Initialize theme state
-    initialize_theme_state()
-    
     # Load enhanced custom CSS
     load_custom_css()
     
-    # Apply theme
-    apply_theme(st.session_state.theme)
+    # Create sidebar configuration
+    create_sidebar_config()
     
     # Add demo option
     if st.sidebar.checkbox("Show UI Components Demo"):
