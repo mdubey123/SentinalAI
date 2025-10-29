@@ -532,33 +532,746 @@ def create_footer():
     """, unsafe_allow_html=True)
 
 def load_custom_css():
-    """Load custom CSS with professional enterprise-grade dark theme"""
+    """Load modern cybersecurity-themed CSS"""
     custom_css = """
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    
     /* ========================================
-       ENTERPRISE DARK THEME - GLOBAL OVERRIDE
+       MODERN CYBERSECURITY DASHBOARD THEME
        ======================================== */
     
-    /* Dark theme is the default - no toggle needed */
+    :root {
+        --bg-primary: #0a0a1a;
+        --bg-secondary: #111827;
+        --bg-elevated: #1f2937;
+        --bg-glass: rgba(255, 255, 255, 0.05);
+        
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --text-accent: #00d4ff;
+        
+        --accent-primary: #00d4ff;
+        --accent-secondary: #7c3aed;
+        --accent-success: #10b981;
+        --accent-warning: #f59e0b;
+        --accent-danger: #ef4444;
+        
+        --border-primary: rgba(255, 255, 255, 0.1);
+        --border-accent: rgba(0, 212, 255, 0.3);
+        
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+        
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     
-    /* ===== Enhanced Fixed Sidebar ===== */
+    .stApp {
+        background: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        font-family: 'Inter', 'Poppins', 'Roboto', sans-serif !important;
+        line-height: 1.6 !important;
+    }
+    
+    body {
+        background: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        font-family: 'Inter', 'Poppins', 'Roboto', sans-serif !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-primary) !important;
+        font-weight: 700 !important;
+        margin-bottom: 1rem !important;
+        font-family: 'Inter', sans-serif !important;
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+    }
+    
+    h1 {
+        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        background: linear-gradient(135deg, #00d4ff, #7c3aed) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        text-align: center !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 2rem !important;
+        color: var(--text-primary) !important;
+        position: relative !important;
+    }
+    
+    h2::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: -8px !important;
+        left: 0 !important;
+        width: 60px !important;
+        height: 3px !important;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)) !important;
+        border-radius: 2px !important;
+    }
+    
+    h3 {
+        font-size: 1.5rem !important;
+        color: var(--text-primary) !important;
+    }
+    
+    p, span, div {
+        color: var(--text-secondary) !important;
+        font-size: 1rem !important;
+        line-height: 1.6 !important;
+    }
+    
     [data-testid="stSidebar"] {
+        background: var(--bg-secondary) !important;
+        border-right: 2px solid var(--border-accent) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        box-shadow: var(--shadow-lg) !important;
+        width: 320px !important;
+        min-width: 320px !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 2rem 1.5rem !important;
+        background: transparent !important;
+    }
+    
+    .stSidebar h1 {
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        margin-bottom: 0.5rem !important;
+        background: linear-gradient(135deg, #00d4ff, #7c3aed) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+    
+    .stSidebar p {
+        text-align: center !important;
+        color: var(--text-muted) !important;
+        font-style: italic !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .stSidebar .stMarkdown,
+    .stSidebar .stSelectbox,
+    .stSidebar .stTextInput,
+    .stSidebar .stRadio,
+    .stSidebar .stCheckbox {
+        margin-bottom: 1.5rem !important;
+        width: 100% !important;
+    }
+    
+    .stSidebar .stSelectbox > div > div > div,
+    .stSidebar .stTextInput > div > div > input {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        transition: var(--transition) !important;
+        width: 100% !important;
+    }
+    
+    .stSidebar .stSelectbox > div > div > div:hover,
+    .stSidebar .stTextInput > div > div > input:hover {
+        border-color: var(--accent-primary) !important;
+        box-shadow: var(--shadow-glow) !important;
+    }
+    
+    .stSidebar .stSelectbox > div > div > div:focus,
+    .stSidebar .stTextInput > div > div > input:focus {
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2) !important;
+        outline: none !important;
+    }
+    
+    .stSidebar .stRadio > div {
+        background: var(--bg-glass) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1rem !important;
+        transition: var(--transition) !important;
+    }
+    
+    .stSidebar .stRadio > div:hover {
+        border-color: var(--accent-primary) !important;
+        background: var(--bg-elevated) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: var(--shadow-md) !important;
+    }
+    
+    .stSidebar .stRadio label {
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        font-size: 0.95rem !important;
+        padding: 0.5rem 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+    }
+    
+    .stSidebar .stRadio label > div:first-child {
+        margin-right: 0.75rem !important;
+        border: 2px solid var(--accent-primary) !important;
+        border-radius: 50% !important;
+        width: 18px !important;
+        height: 18px !important;
+        transition: var(--transition) !important;
+    }
+    
+    .stSidebar .stRadio label:hover > div:first-child {
+        border-color: var(--accent-secondary) !important;
+        box-shadow: 0 0 8px rgba(0, 212, 255, 0.4) !important;
+    }
+    
+    .main .block-container {
+        padding: 2.5rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+        background: transparent !important;
+    }
+    
+    .stButton > button {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.875rem 2rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: var(--transition) !important;
+        box-shadow: var(--shadow-md) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        cursor: pointer !important;
+    }
+    
+    .stButton > button::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+        transition: var(--transition) !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: var(--shadow-lg) !important;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100% !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(-1px) !important;
+    }
+    
+    .card, .modern-card {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 2rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: var(--shadow-md) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        transition: var(--transition) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .card::before, .modern-card::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 3px !important;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)) !important;
+        opacity: 0.8 !important;
+    }
+    
+    .card:hover, .modern-card:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: var(--shadow-lg) !important;
+        border-color: var(--accent-primary) !important;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: var(--bg-elevated) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 0.5rem !important;
+        margin-bottom: 2rem !important;
+        border: 1px solid var(--border-primary) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: var(--text-secondary) !important;
+        padding: 1rem 1.5rem !important;
+        margin-right: 0.5rem !important;
+        border-radius: var(--radius-md) !important;
+        transition: var(--transition) !important;
+        font-weight: 500 !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--text-primary) !important;
+        background: var(--bg-glass) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        color: var(--text-primary) !important;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+        box-shadow: var(--shadow-md) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    .stAlert {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-primary) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 1.5rem !important;
+        margin: 1rem 0 !important;
+        box-shadow: var(--shadow-md) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+    
+    .stAlert[data-testid="stSuccess"] {
+        border-left: 4px solid var(--accent-success) !important;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), var(--bg-elevated)) !important;
+    }
+    
+    .stAlert[data-testid="stWarning"] {
+        border-left: 4px solid var(--accent-warning) !important;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), var(--bg-elevated)) !important;
+    }
+    
+    .stAlert[data-testid="stError"] {
+        border-left: 4px solid var(--accent-danger) !important;
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--bg-elevated)) !important;
+    }
+    
+    ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px !important;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary)) !important;
+        border-radius: var(--radius-sm) !important;
+        transition: var(--transition) !important;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, var(--accent-secondary), var(--accent-primary)) !important;
+    }
+    
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding: 1.5rem !important;
+        }
+        
+        [data-testid="stSidebar"] {
+            width: 100vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 1000 !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.3s ease !important;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        h1 {
+            font-size: 2rem !important;
+        }
+        
+        h2 {
+            font-size: 1.5rem !important;
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out !important;
+    }
+    
+    @keyframes glow {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+        }
+    }
+    
+    .glow {
+        animation: glow 2s ease-in-out infinite !important;
+    }
+    
+    .text-center { text-align: center !important; }
+    .text-left { text-align: left !important; }
+    .text-right { text-align: right !important; }
+    
+    .mb-1 { margin-bottom: 0.5rem !important; }
+    .mb-2 { margin-bottom: 1rem !important; }
+    .mb-3 { margin-bottom: 1.5rem !important; }
+    .mb-4 { margin-bottom: 2rem !important; }
+    
+    .mt-1 { margin-top: 0.5rem !important; }
+    .mt-2 { margin-top: 1rem !important; }
+    .mt-3 { margin-top: 1.5rem !important; }
+    .mt-4 { margin-top: 2rem !important; }
+    
+    .p-1 { padding: 0.5rem !important; }
+    .p-2 { padding: 1rem !important; }
+    .p-3 { padding: 1.5rem !important; }
+    .p-4 { padding: 2rem !important; }
+    
+    * {
+        box-sizing: border-box !important;
+    }
+    
+    .stApp * {
+        font-family: 'Inter', 'Poppins', 'Roboto', sans-serif !important;
+    }
+    
+    .stApp, .stApp *, .stApp *::before, .stApp *::after {
+        color: inherit !important;
+    }
+    
+    .stApp p, .stApp span, .stApp div {
+        color: var(--text-secondary) !important;
+    }
+    
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+        color: var(--text-primary) !important;
+    }
+    
+    .stApp label {
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+    
+    .stVerticalBlockBorder,
+    .stHorizontalBlockBorder {
+        display: none !important;
+    }
+    
+    </style>
+    """
+    
+    st.markdown(custom_css, unsafe_allow_html=True)
+
+def create_sidebar_config():
+    """
+    Create the sidebar configuration section with LLM settings.
+    """
+    st.sidebar.markdown("### 🤖 AI Configuration")
+    
+    # LLM Provider dropdown
+    llm_provider = st.sidebar.selectbox(
+        "LLM Provider:",
+        options=["OpenAI", "Llama", "Gemini", "Claude", "Custom"],
+        index=0,
+        key="llm_provider"
+    )
+    
+    # Model selection based on provider
+    model_options = {
+        "OpenAI": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o"],
+        "Llama": ["llama-2-70b", "llama-2-13b", "llama-2-7b"],
+        "Gemini": ["gemini-pro", "gemini-pro-vision"],
+        "Claude": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+        "Custom": ["custom-model"]
+    }
+    
+    selected_model = st.sidebar.selectbox(
+        "Model:",
+        options=model_options.get(llm_provider, ["default"]),
+        key="selected_model"
+    )
+    
+    # API Key input
+    api_key = st.sidebar.text_input(
+        "API Key:",
+        type="password",
+        key="api_key",
+        help="Enter your API key for the selected provider"
+    )
+    
+    # Advanced settings
+    with st.sidebar.expander("⚙️ Advanced Settings"):
+        temperature = st.slider("Temperature:", 0.0, 2.0, 0.7, 0.1)
+        max_tokens = st.number_input("Max Tokens:", 100, 4000, 1000)
+        top_p = st.slider("Top P:", 0.0, 1.0, 0.9, 0.05)
+    
+    return {
+        "llm_provider": llm_provider,
+        "model": selected_model,
+        "api_key": api_key,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": top_p
+    }
+
+def main():
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        width: 360px !important;
+        min-width: 320px !important;
+        box-shadow: 0 0 30px rgba(0, 128, 255, 0.2) !important;
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         height: 100vh !important;
-        width: 20rem !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        background: linear-gradient(180deg, #0a0f1a 0%, #111827 100%) !important;
-        border-right: 2px solid #1f2937 !important;
-        z-index: 10 !important;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.4) !important;
-        padding: 1.5rem 1rem !important;
+        z-index: 100 !important;
     }
+
+    /* Sidebar content container */
+    .css-1d391kg > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 2rem 1.5rem !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+    }
+
+    /* Sidebar title - Professional styling */
+    .css-1d391kg h1 {
+        color: #E6E6E6 !important;
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.5rem !important;
+        text-align: center !important;
+        background: linear-gradient(135deg, #00ffff 0%, #0080ff 50%, #8000ff 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        text-shadow: 0 0 15px rgba(0, 212, 255, 0.5) !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Sidebar subtitle */
+    .css-1d391kg p {
+        color: #B8BCC8 !important;
+        font-size: 0.875rem !important;
+        text-align: center !important;
+        margin-bottom: 2rem !important;
+        font-style: italic !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Sidebar radio buttons - NO TEXT WRAPPING */
+    .css-1d391kg .stRadio > div {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+
+    .css-1d391kg .stRadio > div > label {
+        display: flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        padding: 0.875rem 1rem !important;
+        border-radius: 6px !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid transparent !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+        color: #E6E6E6 !important;
+        cursor: pointer !important;
+        position: relative !important;
+        min-height: 48px !important;
+    }
+
+    .css-1d391kg .stRadio > div > label:hover {
+        background: rgba(0, 212, 255, 0.08) !important;
+        border-color: #00d4ff !important;
+        transform: translateX(6px) !important;
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+    }
+
+    /* Radio button indicator */
+    .css-1d391kg .stRadio > div > label > div:first-child {
+        margin-right: 1rem !important;
+        border: 2px solid #00d4ff !important;
+        border-radius: 50% !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .css-1d391kg .stRadio > div > label:hover > div:first-child {
+        border-color: #00d4ff !important;
+        box-shadow: 0 0 8px rgba(0, 212, 255, 0.4) !important;
+    }
+
+    /* Main content area */
+    .main {
+        margin-left: 360px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        width: calc(100vw - 360px) !important;
+        min-height: 100vh !important;
+    }
+
+    .main .block-container {
+        padding-top: 2.5rem !important;
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+        padding-bottom: 2.5rem !important;
+        max-width: calc(100vw - 360px - 4rem) !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Enhanced typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: #E6E6E6 !important;
+        font-weight: 700 !important;
+        margin-bottom: 1.25rem !important;
+        background: none !important;
+        -webkit-background-clip: initial !important;
+        -webkit-text-fill-color: initial !important;
+        background-clip: initial !important;
+        text-shadow: none !important;
+        letter-spacing: -0.025em !important;
+        line-height: 1.2 !important;
+        font-family: 'Inter', 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+    }
+
+    h1 {
+        font-size: 2.25rem !important;
+        font-weight: 800 !important;
+        background: linear-gradient(135deg, #00ffff 0%, #0080ff 50%, #8000ff 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        text-shadow: none !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    p, span, div {
+        color: #B8BCC8 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        font-weight: 400 !important;
+        line-height: 1.6 !important;
+        font-size: 1rem !important;
+        font-family: 'Inter', 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+    }
+
+    /* Enhanced text clarity for all elements */
+    .stApp, .stApp *, .stApp *::before, .stApp *::after {
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1 !important;
+    }
+
+    /* Responsive design */
+    @media (max-width: 1400px) {
+        .css-1d391kg {
+            width: 320px !important;
+            min-width: 300px !important;
+        }
+        
+        .main {
+            margin-left: 320px !important;
+            width: calc(100vw - 320px) !important;
+        }
+        
+        .main .block-container {
+            max-width: calc(100vw - 320px - 2rem) !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .css-1d391kg {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 1000 !important;
+            height: 100vh !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        
+        .main {
+            margin-left: 0 !important;
+            width: 100vw !important;
+        }
+        
+        .main .block-container {
+            max-width: 100vw !important;
+            padding: 1rem !important;
+        }
+    }
+    </style>
+    """
+    
+    st.markdown(custom_css, unsafe_allow_html=True)
     
     /* ===== Main Content Layout Fix ===== */
     [data-testid="stAppViewContainer"] {
@@ -3232,6 +3945,7 @@ def load_custom_css():
     }
     </style>
     """
+    
     st.markdown(custom_css, unsafe_allow_html=True)
 
 # This function is now defined above in the theme management section
