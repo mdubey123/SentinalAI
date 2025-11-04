@@ -534,8 +534,8 @@ def create_footer():
 def load_custom_css():
     """Load modern cybersecurity-themed CSS"""
     custom_css = """
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
     /* ========================================
        MODERN CYBERSECURITY DASHBOARD THEME
        ======================================== */
@@ -1002,8 +1002,8 @@ def load_custom_css():
         display: none !important;
     }
     
-    </style>
-    """
+</style>
+"""
     
     st.markdown(custom_css, unsafe_allow_html=True)
 
@@ -1060,6 +1060,10 @@ def create_sidebar_config():
     }
 
 def main():
+    custom_css = """
+    <style>
+    /* ===== Sidebar layout overrides ===== */
+    .css-1d391kg {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -1273,6 +1277,8 @@ def main():
     
     st.markdown(custom_css, unsafe_allow_html=True)
     
+    custom_css = """
+    <style>
     /* ===== Main Content Layout Fix ===== */
     [data-testid="stAppViewContainer"] {
         margin-left: 20rem !important;
@@ -4065,7 +4071,8 @@ class SentinelAIApp:
                 "Choose Page:",
                 ["🏠 Home", "🔍 Security Scan", "📊 Dashboard", "📋 Reports", "⚙️ Settings"],
                 index=0,
-                help="Navigate between major sections"
+                help="Navigate between major sections",
+                key="navigation_page_radio"
             )
         
         # Store current page in session state
@@ -4116,7 +4123,8 @@ class SentinelAIApp:
         with st.sidebar.expander("⚙️ Scan Settings", expanded=False):
             scan_mode = st.radio(
                 "Scan Mode",
-                ["Quick Scan", "Deep Scan", "Custom"]
+                ["Quick Scan", "Deep Scan", "Custom"],
+                key="scan_mode_radio"
             )
         
         # VAPT Settings (Expander)
@@ -4127,7 +4135,8 @@ class SentinelAIApp:
                 vapt_scope = st.radio(
                     "VAPT Scope",
                     ["Host Only", "Local Subnet"],
-                    help="Host Only is recommended for safety"
+                    help="Host Only is recommended for safety",
+                    key="vapt_scope_radio"
                 )
         
         return {
@@ -4239,7 +4248,8 @@ class SentinelAIApp:
             scan_type = st.radio(
                 "Scan Type",
                 ["Folder Scan", "File Scan", "Hash Analysis"],
-                horizontal=True
+                horizontal=True,
+                key="scan_type_radio"
             )
             
             if scan_type == "Folder Scan":
@@ -5775,6 +5785,9 @@ class SentinelAIApp:
             # Render sidebar configuration
             config = self.render_sidebar()
             
+            # Store config in session state for use by other pages
+            st.session_state.sidebar_config = config
+            
             # Get current page from session state
             current_page = st.session_state.get('current_page', '🏠 Home')
             
@@ -5863,8 +5876,15 @@ class SentinelAIApp:
         with col2:
             st.markdown("#### Test LLM Connection")
             
-            # Get current config from sidebar
-            config = self.render_sidebar()
+            # Get current config from session state (avoid re-rendering sidebar)
+            config = st.session_state.get('sidebar_config', {
+                'llm_provider': 'OpenAI',
+                'llm_model': 'gpt-4',
+                'vt_enabled': False,
+                'scan_mode': 'Quick Scan',
+                'vapt_enabled': False,
+                'vapt_scope': None
+            })
             
             if st.button("🧪 Test LLM Connection", type="primary"):
                 with st.spinner("Testing LLM connection..."):
