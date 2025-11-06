@@ -2,7 +2,7 @@
 
 ## Overview
 
-SentinelAI v2 is a comprehensive, AI-powered cybersecurity analysis platform designed by Dr. Alexandra Chen. It provides enterprise-grade malware detection, vulnerability assessment, and intelligent threat analysis with gamification features and multi-LLM support.
+SentinelAI v2 is a comprehensive, AI-powered cybersecurity analysis platform designed by Dr. Alexandra Chen. It provides enterprise-grade malware detection, vulnerability assessment, and intelligent threat analysis with gamification features and multi-LLM support   .
 
 ## Key Features
 
